@@ -49,6 +49,7 @@ typedef byte* video_memory;
 void clear_screen();
 void kprint(char* str);
 int kprintf(char* fmt, ...);
+int kputchar(int ch);
 void scroll_screen(uint8 exceeded_bytes);
 word get_cursor_offset();
 void set_cursor_offset(word offset);

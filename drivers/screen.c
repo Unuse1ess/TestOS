@@ -44,10 +44,10 @@ void set_cursor_offset(word offset)
 
 	/* High byte */
 	port_byte_out(REG_SCREEN_CTRL, 14);
-	port_byte_out(REG_SCREEN_DATA, (byte)(offset >> 8));
+	port_byte_out(REG_SCREEN_DATA, HIBYTE(offset));
 	/* Low byte */
 	port_byte_out(REG_SCREEN_CTRL, 15);
-	port_byte_out(REG_SCREEN_DATA, (byte)(offset & 0xff));
+	port_byte_out(REG_SCREEN_DATA, LOBYTE(offset));
 }
 
 /*	Since the size of video memory can be divided by 4,
@@ -70,23 +70,39 @@ void kprint(char* str)
 {
 	word offset = get_cursor_offset();
 	video_memory vm = VIDEO_ADDRESS + offset;
-	byte is_ctrl_ch = FALSE;
+	byte is_print_ch = FALSE;
 	byte x, y;
 
 	for (; *str; vm += 2, str++)
 	{
-		if (*str == '\n')
+		if (*str == '\n')			/* Return is received */
 		{
 			y = GET_OFFSET_Y(offset);
 
-			/* Next line */
+			/* Set cursor to next line */
 			offset = GET_OFFSET(0, y + 1);
 			vm = VIDEO_ADDRESS + offset - 2;
-			is_ctrl_ch = TRUE;
+		}
+		else if (*str == '\b')		/* Backspace is received */
+		{
+			y = GET_OFFSET_Y(offset);
+			do
+			{	/* Find a non-null character */
+				vm -= 2;
+				offset -= 2;
+			} while (vm[0] == 0 && vm > VIDEO_ADDRESS);
+
+			/* If still at the same line, delete previous character. */
+			/* If not, set the cursor to next position. */
+			if (y == GET_OFFSET_Y(offset))
+				vm[0] = 0;
+			else
+				offset += 2;
 		}
 		else
 		{
 			offset += 2;
+			is_print_ch = TRUE;
 		}
 
 		if (offset >= SIZE_OF_VIDEO_MEM)
@@ -104,14 +120,12 @@ void kprint(char* str)
 			offset += 2;
 		}
 
-		if (is_ctrl_ch)
+		if (is_print_ch)
 		{
-			is_ctrl_ch = FALSE;
-			continue;
+			vm[0] = *str;
+			vm[1] = WHITE_ON_BLACK;
+			is_print_ch = FALSE;
 		}
-
-		vm[0] = *str;
-		vm[1] = WHITE_ON_BLACK;
 	}
 
 	set_cursor_offset(offset);
@@ -144,4 +158,16 @@ int kprintf(char* fmt, ...)
 	kprint(buffer);
 
 	return ret;
+}
+
+int kputchar(int ch)
+{
+	char str[2];
+
+	str[0] = (char)ch;
+	str[1] = 0;
+
+	kprint(str);
+
+	return ch;
 }

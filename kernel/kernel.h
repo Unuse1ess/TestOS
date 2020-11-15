@@ -28,5 +28,6 @@ extern char os_name[];
 /* Kernel function */
 void print_os_info();
 int kprintf(char* fmt, ...);
+void user_input(char*);
 
 #endif

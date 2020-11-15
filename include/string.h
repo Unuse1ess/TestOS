@@ -13,6 +13,7 @@
 
 #include "stdarg.h"
 
+/* Arguments structure for non-standard C library function itoa(). */
 typedef struct
 {
 	int value;
@@ -28,5 +29,6 @@ char* itoa(PITOA_ARGS pArgs);
 int strlen(char* str);
 int vsnprintf(char* buffer, unsigned size, char* fmt, va_list args);
 int snprintf(char* buffer, unsigned size, char* fmt, ...);
+int strcmp(char* s1, char* s2);
 
 #endif

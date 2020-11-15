@@ -6,7 +6,7 @@
  *--------------------------------------------------------------
  * History:
  *	Version 0.1:
- *		2020/11/13 created by MYM. Create the kernel of OS.
+ *		2020/11/13 created by MYM.
  *
  *-------------------------------------------------------------*/
 
@@ -37,7 +37,7 @@ typedef uint64				qword;
 #define LOBYTE(w)			((byte)(((dword)(w)) & 0xff))
 #define HIBYTE(w)			((byte)((((dword)(w)) >> 8) & 0xff))
 
-
+typedef int BOOL;
 
 #ifndef TRUE
 #define TRUE				1			/* May be unsafe */
@@ -47,40 +47,21 @@ typedef uint64				qword;
 #define FALSE				0
 #endif
 
+
 #ifndef NULL
 #define	NULL				(void*)0
 #endif
 
+#define CALLBACK
 
-/* Meta structure of segment descriptor */
-typedef struct
-{
-	word segment_length_0_15;			/* Segment length bit 0~15 */
-
-	byte segment_base_0_7;				/* Segment base bit 0~23 */
-	byte segment_base_8_15;
-	byte segment_base_16_23;
-
-	byte type : 4;						/*  */
-	byte S : 1;							/*  */
-	byte DPL : 2;						/* Descriptor privilege level */
-	byte P : 1;							/* Present bit */
-
-	byte segment_length_16_19 : 4;		/* Segment length bit 16~19 */
-	byte AVL : 1;						/*  */
-	byte reserved : 1;					/* Reserved bit, always 0 */
-	byte D_B : 1;						/*  */
-	byte G : 1;							/*  */
-
-	byte segment_base_24_31;			/* Segment base bit 24~31 */
-}SEGMENT_DESCRIPTOR, *GDT, *LDT;
 
 /* Console information */
 typedef struct
 {
-	byte clr_prop;			/* Color property of text */
-	byte is_scroll;			/*  */
-}CONSOLE_INFO;
+	byte clr_prop;						/* Color property of text */
+	byte is_scroll : 1;					/* 0 = clear screen, 1 = scroll screen, when text is full */
+	byte is_delete_line : 1;			/* 0 = delete only in line, 1 = delete all, when backspace is pressed */
+}VGA_CONSOLE_INFO;
 
 
 

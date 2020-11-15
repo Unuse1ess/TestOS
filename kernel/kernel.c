@@ -13,6 +13,8 @@
 #include "types.h"
 #include "kernel.h"
 #include "../drivers/screen.h"
+#include "../cpu/isr.h"
+#include "../cpu/seg.h"
 
 /* Definition of OS information */
 word os_ver = MAKEWORD(MINOR_OS_VER, MAJOR_OS_VER);
@@ -26,11 +28,35 @@ void print_os_info()
 	kprintf("Welcome to %s\n", os_name);
 }
 
+extern dword tick;
+
+void user_input(char* input)
+{
+	//if (strcmp(input, "END") == 0)
+	//{
+	//	kprint("Stopping the CPU. Bye!\n");
+	//	//	shutdown();
+	//	asm volatile("hlt");
+	//}
+	//kprint("You said: ");
+	//kprint(input);
+	//kprint("\n> ");
+	kprintf("tick: %d", tick);
+}
+
+
 void kernel_main()
 {
+	isr_install();
+	irq_install();
+
 	clear_screen();
 	print_os_info();
 
-	/* Infinite loop */
+	SEGMENT_DESCRIPTOR sd;
+	INTERRUPT_DESCRIPTOR id;
+	IDTR i;
+
+	/* Infinite loop, waiting for interrupts. */
 	while (1);
 }

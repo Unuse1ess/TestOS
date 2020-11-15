@@ -10,7 +10,11 @@
 
 ; Kernel's address in memory
 KERNEL_ADDR			equ		0x1000
-SEC_NUM_TO_READ		equ		0x10
+
+; IMPORTANT!
+; With the size of the kernel growth,
+; the number of the sectors to read should grow either.
+SEC_NUM_TO_READ		equ		0x20
 
 ; Tell the assembler where the program is.
 [org 0x7c00]
