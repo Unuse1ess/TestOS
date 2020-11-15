@@ -56,5 +56,5 @@ bochs: os-image.bin
 	nasm $< -f bin -o $@
 
 clean:
-	rm -rf boot/*.bin os-image.bin *.elf
+	rm -rf boot/*.bin *.bin *.elf
 	rm -rf ${OBJ}
