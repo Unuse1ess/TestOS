@@ -47,15 +47,16 @@ void user_input(char* input)
 
 void kernel_main()
 {
+	reload_gdt(gdt);
+
 	isr_install();
 	irq_install();
 
 	clear_screen();
 	print_os_info();
 
-	SEGMENT_DESCRIPTOR sd;
-	INTERRUPT_DESCRIPTOR id;
-	IDTR i;
+	kprintf("%p\n", gdt);
+	kprintf("%d", gdt[1].AVL);
 
 	/* Infinite loop, waiting for interrupts. */
 	while (1);

@@ -5,7 +5,7 @@ gdt_start: ; don't remove the labels, they're needed to compute sizes and jumps
 
 ; GDT for code segment. base = 0x00000000, length = 0xfffff
 ; for flags, refer to os-dev.pdf document, page 36
-gdt_code: 
+gdt_code:
     dw 0xffff    ; segment length, bits 0-15
     dw 0x0       ; segment base, bits 0-15
     db 0x0       ; segment base, bits 16-23
@@ -30,6 +30,13 @@ gdt_descriptor:
     dw gdt_end - gdt_start - 1 ; size (16 bit), always one less of its true size
     dd gdt_start ; address (32 bit)
 
-; define some constants for later use
+; Define some constants for later use.
+; Since an item in GDT is 8-byte, the lower 3 bits is 0,
+; which can be used to describe its property,
+; and higher 13 bits becomes index in gdt.
+; Because they are in GDT and DPL = 0,
+; the higher 13 bits of offset to gdt_start is the
+; index in GDT, and in assembly code we can load them
+; to a segment register directly.
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start

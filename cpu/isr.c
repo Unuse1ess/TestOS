@@ -12,6 +12,7 @@ isr_t interrupt_handlers[256];
  * of the function names */
 void isr_install()
 {
+	/* Install handler of CPU-reserved interrupts */
 	set_idt_gate(0, (dword)isr0);
 	set_idt_gate(1, (dword)isr1);
 	set_idt_gate(2, (dword)isr2);
@@ -45,37 +46,53 @@ void isr_install()
 	set_idt_gate(30, (dword)isr30);
 	set_idt_gate(31, (dword)isr31);
 
-	// Remap the PIC
-	port_byte_out(0x20, 0x11);
-	port_byte_out(0xA0, 0x11);
-	port_byte_out(0x21, 0x20);
-	port_byte_out(0xA1, 0x28);
-	port_byte_out(0x21, 0x04);
-	port_byte_out(0xA1, 0x02);
-	port_byte_out(0x21, 0x01);
-	port_byte_out(0xA1, 0x01);
+	/* Initialization of 8059A */
+	/* Write ICW1 */
+	/* Needs ICW4 and edge triggered mode */
+	port_byte_out(ICW1_MASTER, 0x11);
+	port_byte_out(ICW1_MASTER, 0x11);
+
+	/* Write ICW2 */
+	/* In this step, IRQ0~IRQ7 is mapped to interrupt 0x20~0x27. */
+	port_byte_out(ICW2_MASTER, 0x20);
+	/* In this step, IRQ8~IRQ15 is mapped to interrupt 0x28~0x2F. */
+	port_byte_out(ICW2_SLAVE, 0x28);
+
+	/* Write ICW3 */
+	/* Slave 8259A is linked to master's IRQ2 */
+	port_byte_out(ICW3_MASTER, 0x04);
+	port_byte_out(ICW3_SLAVE, 0x02);
+
+	/* Write ICW4 */
+	/* 80x86 mode and normal EOI */
+	port_byte_out(ICW4_MASTER, 0x01);
+	port_byte_out(ICW4_SLAVE, 0x01);
+
+	/* Write OCW1 */
+	/* Enable all interrupts from 8259A */
 	port_byte_out(0x21, 0x0);
 	port_byte_out(0xA1, 0x0);
 
-	// Install the IRQs
-	set_idt_gate(32, (dword)irq0);
-	set_idt_gate(33, (dword)irq1);
-	set_idt_gate(34, (dword)irq2);
-	set_idt_gate(35, (dword)irq3);
-	set_idt_gate(36, (dword)irq4);
-	set_idt_gate(37, (dword)irq5);
-	set_idt_gate(38, (dword)irq6);
-	set_idt_gate(39, (dword)irq7);
-	set_idt_gate(40, (dword)irq8);
-	set_idt_gate(41, (dword)irq9);
-	set_idt_gate(42, (dword)irq10);
-	set_idt_gate(43, (dword)irq11);
-	set_idt_gate(44, (dword)irq12);
-	set_idt_gate(45, (dword)irq13);
-	set_idt_gate(46, (dword)irq14);
-	set_idt_gate(47, (dword)irq15);
+	/* Install the IRQs */
+	set_idt_gate(INT_IRQ0, (dword)irq0);
+	set_idt_gate(INT_IRQ1, (dword)irq1);
+	set_idt_gate(INT_IRQ2, (dword)irq2);
+	set_idt_gate(INT_IRQ3, (dword)irq3);
+	set_idt_gate(INT_IRQ4, (dword)irq4);
+	set_idt_gate(INT_IRQ5, (dword)irq5);
+	set_idt_gate(INT_IRQ6, (dword)irq6);
+	set_idt_gate(INT_IRQ7, (dword)irq7);
+	set_idt_gate(INT_IRQ8, (dword)irq8);
+	set_idt_gate(INT_IRQ9, (dword)irq9);
+	set_idt_gate(INT_IRQ10, (dword)irq10);
+	set_idt_gate(INT_IRQ11, (dword)irq11);
+	set_idt_gate(INT_IRQ12, (dword)irq12);
+	set_idt_gate(INT_IRQ13, (dword)irq13);
+	set_idt_gate(INT_IRQ14, (dword)irq14);
+	set_idt_gate(INT_IRQ15, (dword)irq15);
 
-	set_idt(); // Load with ASM
+	/* Load with ASM */
+	set_idt();
 }
 
 /* To print the message which defines every exception */
@@ -133,7 +150,8 @@ void irq_handler(registers_t r)
 {
 	/* After every interrupt we need to send an EOI to the PICs
 	 * or they will not send another interrupt again */
-	if (r.int_no >= 40) port_byte_out(0xA0, 0x20); /* slave */
+	if (r.int_no >= 40)
+		port_byte_out(0xA0, 0x20); /* slave */
 	port_byte_out(0x20, 0x20); /* master */
 
 	/* Handle the interrupt in a more modular way */

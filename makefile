@@ -30,11 +30,11 @@ kernel.bin: kernel.tmp
 	rm -rf $<
 
 # Temporary PE file of kernel code.
-kernel.tmp: boot/kernel_entry.o cpu/interrupt.o ${OBJ}
+kernel.tmp: boot/kernel_entry.o cpu/interrupt.o cpu/_gdt.o ${OBJ}
 	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 $^
 
 # Used for debugging purposes
-kernel.elf: boot/kernel_entry.o cpu/interrupt.o ${OBJ}
+kernel.elf: boot/kernel_entry.o cpu/interrupt.o cpu/_gdt.o ${OBJ}
 	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 $^ 
 
 run: os-image.bin
@@ -47,7 +47,7 @@ debug: os-image.bin kernel.elf
 
 # Write the kernel to a floppy image used by bochs
 bochs: os-image.bin
-	dd if=$< of=../../../boot.img bs=1024 count=30 conv=notrunc
+	dd if=$< of=D:/Code/OS/boot.img bs=1024 count=100 conv=notrunc
 
 
 # To make an object, always compile from its .c

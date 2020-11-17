@@ -19,7 +19,7 @@ void init_timer(dword freq)
 	byte high = (byte)((divisor >> 8) & 0xFF);
 
 	/* Install the function we just wrote */
-	register_interrupt_handler(IRQ0, timer_callback);
+	register_interrupt_handler(INT_IRQ0, timer_callback);
 
 	/* Send the command */
 	port_byte_out(0x43, 0x36); /* Command port */

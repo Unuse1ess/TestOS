@@ -1,3 +1,6 @@
+/*
+
+*/
 
 #define IDT_C
 
@@ -8,11 +11,11 @@ IDTR idtr;
 
 void set_idt_gate(int n, dword handler)
 {
-	idt[n].low_offset = LOWORD(handler);
-	idt[n].sel = KERNEL_CS;
-	idt[n].always0 = 0;
+	idt[n].offset_low = LOWORD(handler);
+	idt[n].seg_sel = KERNEL_CS;
+	idt[n].reserved = 0;
 	idt[n].flags = 0x8E;
-	idt[n].high_offset = HIWORD(handler);
+	idt[n].offset_high = HIWORD(handler);
 }
 
 void set_idt()

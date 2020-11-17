@@ -1,9 +1,24 @@
+/*--------------------------------------------------------------
+ *						Time: 2020/11/13
+ *						Author: MYM
+ *--------------------------------------------------------------
+ * History:
+ *	Version 0.1:
+ *		2020/11/15 created by MYM. This header file defines
+ * ISR, which is interrupt service routine, or so called
+ * interrupt handler, and also defines IRQ, which is interrupt
+ * request. In this OS, IRQ0 ~ IRQ15 are mapped to interrupt
+ * 0x20 ~ 0x2f. There is also macros for 8259A.
+ * 
+ *-------------------------------------------------------------*/
 #ifndef ISR_H
 #define ISR_H
 
+/**/
+
 #include "../kernel/types.h"
 
-/* ISRs reserved for CPU exceptions */
+/* Interrupt 0x00 ~ 0x1F are definded by CPU, in protect mode */
 /* Defined and implemented in interrupt.asm */
 extern void isr0();
 extern void isr1();
@@ -37,7 +52,8 @@ extern void isr28();
 extern void isr29();
 extern void isr30();
 extern void isr31();
-/* IRQ definitions */
+
+/* IRQ definitions. They can be think as isr32() ~ isr47().*/
 extern void irq0();
 extern void irq1();
 extern void irq2();
@@ -55,22 +71,51 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
-#define IRQ0 32
-#define IRQ1 33
-#define IRQ2 34
-#define IRQ3 35
-#define IRQ4 36
-#define IRQ5 37
-#define IRQ6 38
-#define IRQ7 39
-#define IRQ8 40
-#define IRQ9 41
-#define IRQ10 42
-#define IRQ11 43
-#define IRQ12 44
-#define IRQ13 45
-#define IRQ14 46
-#define IRQ15 47
+
+/* Map IRQs to corresponding  interrupt number */
+#define INT_IRQ0 32
+#define INT_IRQ1 33
+#define INT_IRQ2 34
+#define INT_IRQ3 35
+#define INT_IRQ4 36
+#define INT_IRQ5 37
+#define INT_IRQ6 38
+#define INT_IRQ7 39
+#define INT_IRQ8 40
+#define INT_IRQ9 41
+#define INT_IRQ10 42
+#define INT_IRQ11 43
+#define INT_IRQ12 44
+#define INT_IRQ13 45
+#define INT_IRQ14 46
+#define INT_IRQ15 47
+
+/* Macros for 8259A, which is a PIC (Programmable Interrupt Controller). */
+/* ICW is initialization command word. */
+/* Ports of Master 8259A used by ICW */
+#define ICW1_MASTER 0x20
+#define ICW2_MASTER 0x21
+#define ICW3_MASTER 0x21
+#define ICW4_MASTER 0x21
+
+/* Ports of slave 8259A */
+#define ICW1_SLAVE 0xA0
+#define ICW2_SLAVE 0xA1
+#define ICW3_SLAVE 0xA1
+#define ICW4_SLAVE 0xA1
+
+/* OCW is operation control word */
+/* Ports of master and slave 8259A used for OCW */
+#define OCW_MASTER 0x20
+#define OCW_SLAVE 0xA0
+
+/* Used by OCW1 */
+#define ENABLE_INTERRUPT(org ,irq)		((org) |= (1 << (INT_IRQ##irq - INT_IRQ0)))
+#define DISABLE_INTERRUPT(org, irq)		((org) &= ~(1 << (INT_IRQ##irq - INT_IRQ0)))
+
+/* Used by OCW2 */
+#define EOI 0x20
+
 
 /* Struct which aggregates many registers */
 typedef struct

@@ -8,6 +8,7 @@
 #include "../include/string.h"
 #include "../include/stdarg.h"
 #include "../include/stdlib.h"
+#include "../include/ctype.h"
 #include "../kernel/types.h"
 
 /* itoa() is not a standard C library function! */
@@ -84,6 +85,7 @@ int strlen(char* str)
 int vsnprintf(char* buffer, unsigned size, char* fmt, va_list args)
 {
 	unsigned cnt = 0, len = 0;
+	unsigned width, fill_in;
 	char buf[32] = { 0 };
 	void* ptr;
 	ITOA_ARGS ia;
@@ -95,19 +97,32 @@ int vsnprintf(char* buffer, unsigned size, char* fmt, va_list args)
 	else
 		size--;		/* Reserve a bit for '\0' */
 
-	ia.bCapital = TRUE;
-	ia.bSigned = TRUE;
 	ia.buffer = buf;
 	ia.buffer_size = 32;
-	ia.radix = 10;
 
 	while (*fmt && cnt < size)
 	{
+		ia.bCapital = TRUE;
+		ia.bSigned = TRUE;
+		ia.radix = 10;
+
+		width = 0;
+		fill_in = 0;
+
 		if (*fmt == '%')
 		{
+			/* TODO: Add number, and make it support ld, lu */
 			/* Compare lower case */
+		recheck:
 			switch (fmt[1] | 0x20)
 			{
+			case '%':
+				*buffer++ = '%';
+				cnt++;
+
+				fmt += 2;
+				break;
+
 			case 'c':
 				/* No need to check the size */
 				*buffer++ = (char)va_arg(args, int);
@@ -116,9 +131,13 @@ int vsnprintf(char* buffer, unsigned size, char* fmt, va_list args)
 				fmt += 2;		/* Skip the specifier */
 				break;
 
+			case 'b':
+				ia.radix = 2;
+				goto case_u;
+
 			case 'o':
 				ia.radix = 8;
-				goto case_o_next;
+				goto case_u;
 
 			case 'p':
 			case 'x':
@@ -126,7 +145,7 @@ int vsnprintf(char* buffer, unsigned size, char* fmt, va_list args)
 				if (fmt[1] == 'x')
 					ia.bCapital = FALSE;
 
-			case_o_next:
+			case_u:
 			case 'u':
 				ia.bSigned = FALSE;
 
@@ -157,11 +176,44 @@ int vsnprintf(char* buffer, unsigned size, char* fmt, va_list args)
 
 				fmt += 2;
 				break;
+
+			//case '-':
+			//	width = -1;
+			//	fmt++;
+
+			default:
+				//if (isdigit(fmt[1]))
+				//{
+				//	fill_in = ' ';
+				//	if (fmt[1] == 0)
+				//	{
+				//		fill_in = '0';
+				//	}
+				//	else
+				//	{
+				//		int i = 1, j;
+
+				//		while (isdigit(fmt[++i]));
+				//		j = --i;
+				//		for (; i >= 1; i--)
+				//			width += fmt[i] - '0';
+				//		fmt += j;
+				//		for (i = 0; i < width && cnt < size; i++)
+				//		{
+				//			*buffer++ = fill_in;
+				//			cnt++;
+				//		}
+				//		goto recheck;
+				//	}
+				//	break;
+				//}
+				goto not_match;
 			}
 
 			continue;
 		}
 
+	not_match:
 		cnt++;
 		*buffer++ = *fmt++;
 	}

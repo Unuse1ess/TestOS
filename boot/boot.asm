@@ -63,11 +63,8 @@ SEC_NUM_TO_READ		equ		0x20
     jmp dword CODE_SEG:init_pm	; Far jump by using a different segment to clear CPU pipeline
 
 disk_err:
-
+	; TODO: Add error check and prompt
 	jmp $
-
-; Definition and initialization of global descriptor table
-%include "boot/gdt.asm"
 
 [bits 32]
 
@@ -86,6 +83,9 @@ init_pm:
 
 	jmp KERNEL_ADDR
 	jmp $
+
+; Definition and initialization of global descriptor table
+%include "boot/gdt.asm"
 
 ; Fill the rest of space to 0
 times 510-($-$$) db 0
