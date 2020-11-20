@@ -1,11 +1,12 @@
 #include "timer.h"
-#include "isr.h"
+#include "idt.h"
 #include "../drivers/ports.h"
+#include "../cpu/isr.h"
 #include "../include/function.h"
 
 dword tick = 0;
 
-static void timer_callback(registers_t regs)
+static void timer_callback(INTERRUPT_STACK_REGS regs)
 {
 	tick++;
 	UNUSED(regs);
@@ -19,7 +20,7 @@ void init_timer(dword freq)
 	byte high = (byte)((divisor >> 8) & 0xFF);
 
 	/* Install the function we just wrote */
-	register_interrupt_handler(INT_IRQ0, timer_callback);
+	set_interrupt_handler(INT_IRQ0, timer_callback);
 
 	/* Send the command */
 	port_byte_out(0x43, 0x36); /* Command port */

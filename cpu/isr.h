@@ -14,7 +14,13 @@
 #ifndef ISR_H
 #define ISR_H
 
-/**/
+/*	Some words:
+ *	ISR: Interrupt Service Routine
+ *	IRQ: Interrupt Request
+ *	PIC: Programmable Interrupt Controller
+ *	ICW: Initialization Command Word
+ *	OCW: Operation Command Word
+ */
 
 #include "../kernel/types.h"
 
@@ -71,8 +77,23 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
+#define INT_DIVERR				0
+#define INT_STEP_DEBUG			1
+#define INT_NMI					2
+#define INT_DEBUG				3
+#define INT_OVERFLOW			4
+#define INT_BOUND_CHECK			5
+#define INT_INVALID_OPCODE		6
+#define INT_NO_FPU				7
+#define INT_DOUBLE_FAULTS		8
+//#define INT_			9
+#define INT_INVALID_TSS			10
+#define INT_SS_FAULT			11
+#define INT_SET_NOT_EXISTS		12
+#define INT_GENERAL_PROTECTION	13
+#define INT_PAGE_NOT_EXISTS		14
 
-/* Map IRQs to corresponding  interrupt number */
+/* Map IRQs to corresponding interrupt number */
 #define INT_IRQ0 32
 #define INT_IRQ1 33
 #define INT_IRQ2 34
@@ -90,47 +111,20 @@ extern void irq15();
 #define INT_IRQ14 46
 #define INT_IRQ15 47
 
-/* Macros for 8259A, which is a PIC (Programmable Interrupt Controller). */
-/* ICW is initialization command word. */
-/* Ports of Master 8259A used by ICW */
-#define ICW1_MASTER 0x20
-#define ICW2_MASTER 0x21
-#define ICW3_MASTER 0x21
-#define ICW4_MASTER 0x21
 
-/* Ports of slave 8259A */
-#define ICW1_SLAVE 0xA0
-#define ICW2_SLAVE 0xA1
-#define ICW3_SLAVE 0xA1
-#define ICW4_SLAVE 0xA1
-
-/* OCW is operation control word */
-/* Ports of master and slave 8259A used for OCW */
-#define OCW_MASTER 0x20
-#define OCW_SLAVE 0xA0
-
-/* Used by OCW1 */
-#define ENABLE_INTERRUPT(org ,irq)		((org) |= (1 << (INT_IRQ##irq - INT_IRQ0)))
-#define DISABLE_INTERRUPT(org, irq)		((org) &= ~(1 << (INT_IRQ##irq - INT_IRQ0)))
-
-/* Used by OCW2 */
-#define EOI 0x20
-
-
-/* Struct which aggregates many registers */
+/* Structure in stack when there is interrupt */
 typedef struct
 {
 	dword ds;										/* Data segment selector */
 	dword edi, esi, ebp, esp, ebx, edx, ecx, eax;	/* Pushed by pusha. */
 	dword int_no, err_code;							/* Interrupt number and error code (if applicable) */
 	dword eip, cs, eflags, useresp, ss;				/* Pushed by the processor automatically */
-} registers_t;
+} INTERRUPT_STACK_REGS;
 
-void isr_install();
-void isr_handler(registers_t r);
-void irq_install();
+typedef void (CALLBACK *ISR_HANDLER)(INTERRUPT_STACK_REGS);
 
-typedef void (CALLBACK *isr_t)(registers_t);
-void register_interrupt_handler(byte n, isr_t handler);
+#ifndef ISR_C
+extern ISR_HANDLER interrupt_handlers[256];
+#endif
 
 #endif

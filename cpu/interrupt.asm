@@ -5,8 +5,9 @@
 ; Common ISR code
 _isr_common_stub:
 
-	; 1. Save CPU state
-	pusha			; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+	; Save CPU state
+	pushad			; Pushe general purpose register
+	xor eax, eax
 	mov ax, ds		; Lower 16-bits of eax = ds.
 	push eax		; save the data segment descriptor
 	mov ax, 0x10	; kernel data segment descriptor
@@ -33,6 +34,7 @@ _isr_common_stub:
 ; and the 'pop ebx'
 _irq_common_stub:
     pusha 
+	xor eax, eax
     mov ax, ds
     push eax
     mov ax, 0x10
@@ -40,8 +42,8 @@ _irq_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    call _irq_handler ; Different than the ISR code
-    pop ebx  ; Different than the ISR code
+    call _irq_handler	; Different than the ISR code
+    pop ebx				; Different than the ISR code
     mov ds, bx
     mov es, bx
     mov fs, bx

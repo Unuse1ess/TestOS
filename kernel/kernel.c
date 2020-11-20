@@ -13,8 +13,10 @@
 #include "types.h"
 #include "kernel.h"
 #include "../drivers/screen.h"
-#include "../cpu/isr.h"
 #include "../cpu/seg.h"
+#include "../cpu/page.h"
+#include "../cpu/idt.h"
+#include "../include/stdlib.h"
 
 /* Definition of OS information */
 word os_ver = MAKEWORD(MINOR_OS_VER, MAJOR_OS_VER);
@@ -28,8 +30,6 @@ void print_os_info()
 	kprintf("Welcome to %s\n", os_name);
 }
 
-extern dword tick;
-
 void user_input(char* input)
 {
 	//if (strcmp(input, "END") == 0)
@@ -41,22 +41,22 @@ void user_input(char* input)
 	//kprint("You said: ");
 	//kprint(input);
 	//kprint("\n> ");
-	kprintf("tick: %d", tick);
 }
-
 
 void kernel_main()
 {
-	reload_gdt(gdt);
+	init_gdt();
+	init_page();
+	/* Enable page mode */
+	start_paging();
 
-	isr_install();
-	irq_install();
+	init_interrupts();
 
 	clear_screen();
 	print_os_info();
 
-	kprintf("%p\n", gdt);
-	kprintf("%d", gdt[1].AVL);
+	char* a = (char*)0x10000000;
+	a[0] = 1;
 
 	/* Infinite loop, waiting for interrupts. */
 	while (1);

@@ -4,7 +4,7 @@
 
 # List all source file
 C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
-ASM_SOURCES = $(wildcard libc/*.asm kernel/*.asm)
+ASM_SOURCES = $(wildcard libc/*.asm kernel/*.asm cpu/*.asm)
 # List all C header files
 HEADERS = $(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h include/*.h)
 
@@ -29,13 +29,14 @@ kernel.bin: kernel.tmp
 	objcopy -O binary $< $@
 	rm -rf $<
 
+# cpu/interrupt.o cpu/asm_gdt.o cpu/start_page.o
 # Temporary PE file of kernel code.
-kernel.tmp: boot/kernel_entry.o cpu/interrupt.o cpu/_gdt.o ${OBJ}
-	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 $^
+kernel.tmp: boot/kernel_entry.o ${OBJ}
+	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 --section-start .PG_TBL=0x10000 $^
 
 # Used for debugging purposes
-kernel.elf: boot/kernel_entry.o cpu/interrupt.o cpu/_gdt.o ${OBJ}
-	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 $^ 
+kernel.elf: boot/kernel_entry.o ${OBJ}
+	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 --section-start .PG_TBL=0x10000 $^ 
 
 run: os-image.bin
 	qemu-system-i386 -fda os-image.bin
@@ -48,6 +49,7 @@ debug: os-image.bin kernel.elf
 # Write the kernel to a floppy image used by bochs
 bochs: os-image.bin
 	dd if=$< of=D:/Code/OS/boot.img bs=1024 count=100 conv=notrunc
+	bochsdbg
 
 
 # To make an object, always compile from its .c

@@ -14,12 +14,14 @@ KERNEL_ADDR			equ		0x1000
 ; IMPORTANT!
 ; With the size of the kernel growth,
 ; the number of the sectors to read should grow either.
-SEC_NUM_TO_READ		equ		0x20
+SEC_NUM_TO_READ		equ		0x35
 
 ; Tell the assembler where the program is.
 [org 0x7c00]
 [bits 16]
-
+;	mov   bx, 0x4107 
+;	mov   ax, 0x4f02
+;	int   0x10
 	; 1. Load the kernel into 0x1000.
 
 	; Let es:bx points to kernel's address.
@@ -47,7 +49,7 @@ SEC_NUM_TO_READ		equ		0x20
 	; There may be some errors, so check whether error occur.
 	jc disk_err
 	cmp al, SEC_NUM_TO_READ
-	jne disk_err
+;	jne disk_err
 
 	; 2. Switch to 32-bit protected mode.
 
