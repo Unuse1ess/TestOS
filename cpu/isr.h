@@ -23,6 +23,7 @@
  */
 
 #include "../kernel/types.h"
+#include "../kernel/proc.h"
 
 /* Interrupt 0x00 ~ 0x1F are definded by CPU, in protect mode */
 /* Defined and implemented in interrupt.asm */
@@ -112,16 +113,7 @@ extern void irq15();
 #define INT_IRQ15 47
 
 
-/* Structure in stack when there is interrupt */
-typedef struct
-{
-	dword ds;										/* Data segment selector */
-	dword edi, esi, ebp, esp, ebx, edx, ecx, eax;	/* Pushed by pusha. */
-	dword int_no, err_code;							/* Interrupt number and error code (if applicable) */
-	dword eip, cs, eflags, useresp, ss;				/* Pushed by the processor automatically */
-} INTERRUPT_STACK_REGS;
-
-typedef void (CALLBACK *ISR_HANDLER)(INTERRUPT_STACK_REGS);
+typedef void (CALLBACK *ISR_HANDLER)(THREAD_CONTEXT);
 
 #ifndef ISR_C
 extern ISR_HANDLER interrupt_handlers[256];

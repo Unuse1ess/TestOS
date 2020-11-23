@@ -1,57 +1,92 @@
+%include "kernel/sconst.inc"
+
+[bits 32]
+
 ; Defined in isr.c
 [extern _isr_handler]
 [extern _irq_handler]
 
+; Defined in tss.c
+[extern _tss]
+
+; Defined in proc.c
+[extern _proc_table]
+[extern _proc_offset]
+
 ; Common ISR code
 _isr_common_stub:
+	sub esp, 4		; Jump over ret_addr
+	pushad			; Save CPU state
+	push ds
+	push es
+	push fs
+	push gs
 
-	; Save CPU state
-	pushad			; Pushe general purpose register
-	xor eax, eax
-	mov ax, ds		; Lower 16-bits of eax = ds.
-	push eax		; save the data segment descriptor
-	mov ax, 0x10	; kernel data segment descriptor
+	mov ax, ss		; Kernel data segment descriptor
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
 	
-	; 2. Call C handler
+	; Call C handler
+	; Notice that C codes assume ds, ss, es are the same and flat.
 	call _isr_handler
 	
-    ; 3. Restore state
-	pop eax 
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
+    ; Restore state
+	pop ds
+	pop es
+	pop fs
+	pop gs
 	popa
-	add esp, 8	; Cleans up the pushed error code and pushed ISR number
+	add esp, 12	; Cleans up the pushed error code, pushed ISR number and ret_addr
+
 	sti
-	iret		; Pops CS, EIP, EFLAGS, SS, and ESP
+	iretd		; Pops CS, EIP, EFLAGS, SS, and ESP
 
 ; Common IRQ code. Identical to ISR code except for the 'call' 
 ; and the 'pop ebx'
 _irq_common_stub:
-    pusha 
-	xor eax, eax
-    mov ax, ds
-    push eax
-    mov ax, 0x10
+	sub esp, 4
+    pusha
+	push ds
+	push es
+	push fs
+	push gs
+
+    mov ax, ss
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    call _irq_handler	; Different than the ISR code
-    pop ebx				; Different than the ISR code
-    mov ds, bx
-    mov es, bx
-    mov fs, bx
-    mov gs, bx
-    popa
-    add esp, 8
+
+;	cmp ax, [esp + 16]				; Change the esp if privilege level is changed
+;	je no_change1
+
+;	mov esp, KERNEL_STACK_BASE
+
+no_change1:
+    call _irq_handler
+
+;	mov ax, ss
+;	cmp ax, [esp + 16]
+;	je no_change2
+
+;	mov esp, [_proc_table]
+;	add esp, [_proc_offset]
+	
+no_change2:
+;	lea eax, [esp + STACK_TOP]
+;	mov dword [_tss + TSS_ESP0], eax
+
+	pop gs
+	pop fs
+	pop es
+	pop ds
+    popad
+    add esp, 12
+
     sti
-    iret 
+    iretd
 	
 ; We don't get information about which interrupt was caller
 ; when the handler is run, so we will need to have a different handler

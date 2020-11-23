@@ -45,7 +45,7 @@ void set_interrupt_handler(byte n, ISR_HANDLER handler);
 void init_interrupts();
 
 #ifndef IDT_C
-extern INTERRUPT_DESCRIPTOR idt[NUM_OF_INTDESC];
+extern INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
 extern IDTR idtr;
 #endif
 

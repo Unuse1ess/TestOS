@@ -65,7 +65,7 @@ char* exception_messages[] =
 	"Reserved"
 };
 
-void isr_handler(INTERRUPT_STACK_REGS r)
+void isr_handler(THREAD_CONTEXT r)
 {
 	if (interrupt_handlers[r.int_no] != 0)
 	{
@@ -79,7 +79,7 @@ void isr_handler(INTERRUPT_STACK_REGS r)
 	}
 }
 
-void irq_handler(INTERRUPT_STACK_REGS r)
+void irq_handler(THREAD_CONTEXT r)
 {
 	if (interrupt_handlers[r.int_no] != 0)
 		(*interrupt_handlers[r.int_no])(r);

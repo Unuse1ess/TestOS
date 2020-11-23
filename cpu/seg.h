@@ -15,22 +15,37 @@
 #include "../kernel/types.h"
 
 
- /* Privilege level */
- /* Only use ring0 and ring3. */
+/* Privilege level */
+/* Only use ring0 and ring3. */
 #define RING0					0
 #define RING1					1
 #define RING2					2
 #define RING3					3
 
+/* Attribute of segment selector */
+/* RPL bits */
+#define RPL_RING0				0
+#define RPL_RING1				1
+#define RPL_RING2				2
+#define RPL_RING3				3
+
+/* TI bit */
+#define TI_LOCAL_DESCRIPTOR		4
+
+/* Selector for local task */
+#define TASK_CS					(RPL_RING3 | TI_LOCAL_DESCRIPTOR)
+#define TASK_DS					(8 | RPL_RING3 | TI_LOCAL_DESCRIPTOR)
+
+
 /* x86 CPU only has 256 interrupts */
-#define NUM_OF_INTDESC 256
+#define NUM_OF_INT_DESC 256
 
 /*	0. NULL
  *	1. Kernel code segment
  *	2. Kernel data segment
  *	3. ...
  */
-#define NUM_OF_SEGDESC 32
+#define NUM_OF_GDT_DESC 32
 
  /* Kernel's segment selectors */
 #define KERNEL_CS							0x08			/* #1 in GDT */
@@ -64,7 +79,7 @@
  *	+-----------+-----------+-----------+---------------+-----------+-----------+-----------+
  *	|	BIT 7	|	BIT 5~6	|	BIT 4	|	BIT 3		|	BIT 2	|	BIT 1	|	BIT 0	|
  *	+-----------+-----------+-----------+---------------+-----------+-----------+-----------+
- *	|	P		|	DPL		|	 S = 1	|	E = 0		|	C		|	R		|	A		|
+ *	|	P		|	DPL		|	 S = 1	|	E = 1		|	C		|	R		|	A		|
  *	+-----------+-----------+-----------+---------------+-----------+-----------+-----------+
  *	
  *	When S = 0, it is a system descriptor.
@@ -92,26 +107,28 @@
 /* Only use ring0 and ring3. */
 /* DPL bits, bit 5~6 */
 #define DPL_RING0							0x00
-#define DPL_RING1							0x02
-#define DPL_RING2							0x04
-#define DPL_RING3							0x06
+#define DPL_RING1							0x20
+#define DPL_RING2							0x40
+#define DPL_RING3							0x60
 
 /* S bit, bit 4 */
-#define SEGMENT_DESCPRITOR					0x01
+#define NORMAL_DESCPRITOR					0x10
 #define SYSTEM_DESCPRITOR					0x00
 
 /* Type of segment descriptor, when S = 1 */
-#define SEG_EXECUTABLE						0x80
+#define SEG_DATA							0x00
+#define SEG_EXECUTABLE						0x08
 /* Data segment */
-#define SEG_DS_EXPAND_DOWN					0x40
-#define SEG_DS_READ_WRITE					0x20
+#define SEG_DS_EXPAND_DOWN					0x04
+#define SEG_DS_READ_WRITE					0x02
 #define SEG_DS_READ_ONLY					0x00
 /* Executable segment */
-#define SEG_CS_CONFIRMING					0x40
-#define SEG_CS_READ_ONLY					0x20
+#define SEG_CS_CONFIRMING					0x04
+#define SEG_CS_READ_ONLY					0x02
 #define SEG_CS_INACCESSIBLE					0x00
 
 /* Bit 0  */
+#define SEG_NOT_ACCESSED					0x00
 #define SEG_ACCESSED						0x01
 
 /* Type of system descriptor, when S = 0 */
@@ -134,22 +151,22 @@
 
 /* Macros for segment descriptor's attribute */
 /* Granularity of segment limit */
-#define	LIMIT_IN_BYTE			0x08
-#define	LIMIT_IN_4KB			0x00
+#define	COUNT_BY_4KB						0x08
+#define	COUNT_BY_BYTE						0x00
 
 
 /* D/B bit, bit 14 in property */
 /* When it is in executable code segment */
-#define USE_32BITS_OPERAND		0x02
-#define USE_16BITS_OPERAND		0x00
+#define USE_32BITS_OPERAND					0x04
+#define USE_16BITS_OPERAND					0x00
 
 /* When it is in expand-down data segment */
-#define UPPERBOUND_4GB			0x02
-#define UPPERBOUND_64KB			0x00
+#define UPPERBOUND_4GB						0x04
+#define UPPERBOUND_64KB						0x00
 
 /* When it is describing statck segment */
-#define USE_ESP					0x02
-#define USE_SP					0x00
+#define USE_ESP								0x04
+#define USE_SP								0x00
 
 
 /* Cancel the alignment */
@@ -196,12 +213,9 @@ typedef struct
 {
 	dword prev_tss_sel;
 	/* High privilege stack */
-	dword esp0;
-	dword ss0;
-	dword esp1;
-	dword ss1;
-	dword esp2;
-	dword ss2;
+	dword esp0, ss0;
+	dword esp1, ss1;
+	dword esp2, ss2;
 	/* No need to have esp3 and ss3 */
 
 	dword cr3;
@@ -209,31 +223,23 @@ typedef struct
 	dword eflags;
 
 	/* General-purpose registers */
-	dword eax;
-	dword ecx;
-	dword edx;
-	dword ebx;
-	dword esp;
-	dword ebp;
-	dword esi;
-	dword edi;
+	dword eax, ecx, edx, ebx, esp, ebp, esi, edi;
 
 	/* Segment register */
 	/* Higher word is 0. */
-	dword es;
-	dword cs;
-	dword ss;
-	dword ds;
-	dword fs;
-	dword gs;
+	dword es, cs, ss, ds, fs, gs;
 
 	dword ldtr;
-	dword io_bitmap;
+
+	word trap_flag;
+	word io_bitmap_base;
 } TASK_STATE_SEGMENT;
 
+/* Pop previous alignment out */
+#pragma pack(pop)
 
 #ifndef IDT_C
-extern INTERRUPT_DESCRIPTOR idt[NUM_OF_INTDESC];
+extern INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
 extern IDTR idtr;
 #endif
 
@@ -243,14 +249,24 @@ void set_idt();
 
 
 #ifndef GDT_C
-extern SEGMENT_DESCRIPTOR gdt[NUM_OF_SEGDESC];
+extern SEGMENT_DESCRIPTOR gdt[NUM_OF_GDT_DESC];
 extern GDTR gdtr;
 #endif
 
+
 /* Implemented in gdt.c */
 void init_gdt();
+word add_ldt_descriptor(dword seg_base, dword seg_limit);
+word add_tss_descriptor(dword seg_base, dword seg_limit);
 
-/* Pop previous alignment out */
-#pragma pack(pop)
+
+#ifndef TSS_C
+extern TASK_STATE_SEGMENT tss;
+#endif
+
+void init_tss();
+
+extern void load_tr(word tss_sel);
+
 
 #endif

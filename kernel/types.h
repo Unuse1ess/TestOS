@@ -55,6 +55,12 @@ typedef int BOOL;
 #define CALLBACK
 
 
+typedef unsigned STATE;
+
+#define OK					0
+#define ERROR				((unsigned)-1)
+
+
 /* Console information */
 typedef struct
 {

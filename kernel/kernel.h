@@ -20,6 +20,8 @@
 /* Name of OS */
 #define OS_NAME				"MYM-OS"
 
+#define KERNEL_STACK_BASE	0x90000
+
 #ifndef KERNEL_C
 extern word os_ver;
 extern char os_name[];

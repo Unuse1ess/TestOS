@@ -18,7 +18,7 @@
 #include "timer.h"
 #include "page.h"
 
-INTERRUPT_DESCRIPTOR idt[NUM_OF_INTDESC];
+INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
 IDTR idtr;
 
 void init_idt()
@@ -118,7 +118,7 @@ void set_idt_gate(int n, dword handler)
 void set_idt()
 {
 	idtr.base = (dword)&idt;
-	idtr.limit = NUM_OF_INTDESC * sizeof(IDT) - 1;
+	idtr.limit = NUM_OF_INT_DESC * sizeof(IDT) - 1;
 
 	__asm volatile("lidtl (%0)" : : "r" (&idtr));
 }
@@ -144,7 +144,7 @@ void init_interrupts()
 
 	init_irq();
 	/* IRQ0: timer */
-	init_timer(50);
+//	init_timer(50);
 	/* IRQ1: keyboard */
 	init_keyboard();
 

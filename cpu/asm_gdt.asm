@@ -1,11 +1,11 @@
 [bits 32]
 [section .text]
 
-global _reload_gdt
+global _reload_gdtr
 
 ; Prototype: void reload_gdt(GDTR* p);
 ; &p: ebp + 8
-_reload_gdt:
+_reload_gdtr:
 	push ebp
 	mov ebp, esp
 
@@ -20,7 +20,7 @@ _reload_gdt:
 	shr ecx, 2
 
 	mov esi, [esp + 2]		; Origin base address of gdtr
-	lea edi, [ebx + 2]		; New base address of gdtr
+	mov edi, [ebx + 2]		; New base address of gdtr
 
 	mov [esp + 2], edi		; Update the new address and limit.
 	mov dx, [ebx]

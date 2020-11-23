@@ -1,0 +1,64 @@
+void* page_allocate(unsigned size, unsigned flags)
+{
+	int i, j, k;
+	dword base = 0, num_of_page;
+	BOOL all_free = FALSE, start_searching = FALSE;
+
+	num_of_page = size & 3 ? 1 : 0;
+	num_of_page += size >> 2;
+
+	if (flags & PAGE_APPLICATION)
+	{
+		/* Application page */
+	}
+	else
+	{
+		/* System page */
+		for (i = NUM_OF_KERNEL_PAGE + 1; i < NUM_OF_PAGE; i++)
+		{
+			if (page_table[0][i].allocated == PAGE_NOTALLOCATED)
+			{
+				if (!start_searching)
+				{
+					j = i;
+					k = 0;
+					start_searching = TRUE;
+					goto _else;
+				}
+				else
+				{
+				_else:
+					k++;
+					if (k == num_of_page)
+					{
+						base = j * SIZE_OF_PAGE;
+						for (i = j; i < j + k; i++)
+							page_table[0][i].allocated = PAGE_ALLOCATED;
+						goto _succeeded;
+					}
+				}
+			}
+			else
+			{
+				start_searching = FALSE;
+			}
+		}
+	}
+
+_succeeded:
+	if (base != 0)
+	{
+		*(dword*)base = size;
+		base += 4;
+	}
+
+	return (void*)base;
+}
+
+void page_free(void* ptr)
+{
+	unsigned size = *(unsigned*)ptr;
+	dword dir_index = GET_PAGE_TABLE_INDEX(ptr),
+		tbl_index = GET_PAGE_INDEX(ptr);
+	dword i;
+}

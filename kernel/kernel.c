@@ -12,11 +12,13 @@
 
 #include "types.h"
 #include "kernel.h"
+#include "proc.h"
 #include "../drivers/screen.h"
 #include "../cpu/seg.h"
 #include "../cpu/page.h"
 #include "../cpu/idt.h"
 #include "../include/stdlib.h"
+
 
 /* Definition of OS information */
 word os_ver = MAKEWORD(MINOR_OS_VER, MAJOR_OS_VER);
@@ -43,20 +45,29 @@ void user_input(char* input)
 	//kprint("\n> ");
 }
 
+void test()
+{
+//	__asm("cli");
+	kprintf("PROCESS\n");
+	while (1);
+}
+
+
 void kernel_main()
 {
-	init_gdt();
-	init_page();
-	/* Enable page mode */
-	start_paging();
+	init_gdt();				/* Reinitialize GDT and GDTR */
+	init_tss();
 
-	init_interrupts();
+//	init_page();			/* Initialize PDE and PTE */
+//	start_paging();			/* Enable page mode */
+
+	init_interrupts();		/* Initialize IDT and IDTR, and enable interrupts */
 
 	clear_screen();
 	print_os_info();
 
-	char* a = (char*)0x10000000;
-	a[0] = 1;
+//	init_process((dword)test);
+//	restart(proc_table);
 
 	/* Infinite loop, waiting for interrupts. */
 	while (1);

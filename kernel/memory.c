@@ -30,36 +30,26 @@ struct __dummy
 {
 };
 
-/* Initialization of page and enter page mode */
+/* Initialization of kernel pages and enter page mode. */
 void init_page()
 {
 	int i, j;
-	dword pg_tbl_base = (dword)page_table;
 	dword page_base = 0;
-	byte attr = PAGE_SYSTEM | PAGE_PRESENT;
 
-	/* First page table and corresponding pages are used by OS.
-	 * The rest of page tables and corresponding pages are used by application.
-	 */
-	for (i = 0; i < NUM_OF_PAGE_TABLE; i++)
+	page_dir_table[0].attribute = PAGE_SYSTEM | PAGE_PRESENT;
+	page_dir_table[0].base_low = LOWORD(page_table) >> 12;
+	page_dir_table[0].base_high = HIWORD(page_table);
+	page_dir_table[0].full = PAGE_TABLE_NOT_FULL;
+
+	for (i = 0; i < NUM_OF_KERNEL_PAGE; i++)
 	{
-		page_dir_table[i].attribute = attr;
-		page_dir_table[i].base_low = LOWORD(pg_tbl_base) >> 12;
-		page_dir_table[i].base_high = HIWORD(pg_tbl_base);
+		page_table[0][i].attribute = PAGE_SYSTEM | PAGE_PRESENT;
+		page_table[0][i].base_low = LOWORD(page_base) >> 12;
+		page_table[0][i].base_high = HIWORD(page_base);
+		/* System pages are default allocated */
+		page_table[0][i].allocated = PAGE_ALLOCATED;
 
-		for (j = 0; j < NUM_OF_PAGE; j++)
-		{
-			page_table[i][j].attribute = attr;
-			page_table[i][j].base_low = LOWORD(page_base) >> 12;
-			page_table[i][j].base_high = HIWORD(page_base);
-			/* System pages are default allocated */
-			page_table[i][j].allocated = attr & PAGE_APPLICATION;
-
-			page_base += SIZE_OF_PAGE;
-		}
-
-		pg_tbl_base += SIZE_OF_PAGE_TABLE;
-		attr = PAGE_APPLICATION | PAGE_PRESENT;
+		page_base += SIZE_OF_PAGE;
 	}
 }
 
@@ -75,7 +65,7 @@ dword get_phys_addr(dword virt_addr)
 }
 
 /* Handler of fault general protection */
-void CALLBACK gp_handler(INTERRUPT_STACK_REGS regs)
+void CALLBACK gp_handler(THREAD_CONTEXT regs)
 {
 	UNUSED(regs);
 
@@ -83,19 +73,26 @@ void CALLBACK gp_handler(INTERRUPT_STACK_REGS regs)
 }
 
 /* Handler of page fault */
-void CALLBACK page_fault_handler(INTERRUPT_STACK_REGS regs)
+void CALLBACK page_fault_handler(THREAD_CONTEXT regs)
 {
 	UNUSED(regs);
 
+	dword addr;
+
 	kprintf("Page fault!\n");
+	addr = get_page_fault_addr();
+	kprintf("Address: 0x%p\n", addr);
+
+	while (1);
 }
 
 void* page_allocate(unsigned size, unsigned flags)
 {
-	
+	return NULL;
 }
 
-void* page_free(void* ptr)
+
+void page_free(void* ptr)
 {
 
 }

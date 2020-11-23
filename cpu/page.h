@@ -14,12 +14,13 @@
 
 #include "../kernel/types.h"
 
-/* The OS use 0x00000~0x10000, using 16 pages. */
+/* The OS use 0x000000~0x100000, using 0x100 pages.
+ * These pages should be mapped as F(x) = x.
+ */
+#define NUM_OF_KERNEL_PAGE			0x100
 
 #define MAX_NUM_OF_PAGE_TABLE		0x400		/* Maximum 1024 page tables */
 #define MAX_SIZE_OF_PAGE_DIR_TABLE	0x1000		/* Page directory table's size is 4KB */
-
-#define NUM_OF_PAGE_TABLE			0x20		/* 32 page tables so far */
 
 #define NUM_OF_PAGE					0x400		/* 1024 pages in a page table */
 #define SIZE_OF_PAGE_TABLE			0x1000		/* Page table's size is 4KB */
@@ -49,13 +50,18 @@
 #define PAGE_NOTDIRTY				0x00
 #define PAGE_DIRTY					0x40
 
+/* AVL bits, are used by OS to indicate page state of allcoated,
+ * and page table table of full.
+ */
 #define PAGE_ALLOCATED				0x1
 #define PAGE_NOTALLOCATED			0x0
 
+#define PAGE_TABLE_FULL				0x2
+#define PAGE_TABLE_NOT_FULL			0x0
 
-#define GET_PAGE_TABLE_INDEX(addr)	((((addr) >> 22) & 0x3FF))
-#define GET_PAGE_INDEX(addr)		((((addr) >> 12) & 0x3FF))
-#define GET_OFFSET_IN_PAGE(addr)	(addr & 0xFFF)
+#define GET_PAGE_TABLE_INDEX(addr)	((((dword)(addr) >> 22) & 0x3FF))
+#define GET_PAGE_INDEX(addr)		((((dword)(addr) >> 12) & 0x3FF))
+#define GET_OFFSET_IN_PAGE(addr)	((dword)addr & 0xFFF)
 
 #define GET_PAGE_BASE(l, h) ((dword)(((dword)(l)) | (((dword)(h)) << 4)))
 
@@ -73,7 +79,8 @@ typedef struct
 {
 	byte attribute;
 	byte global_page : 1;
-	byte allocated : 3;			/* AVL bits for OS, here we use it to indicated if it is allocated */
+	byte allocated : 1;			/* AVL bits for OS, here we use it to indicated if it is allocated */
+	byte full : 2;				/* AVL bits for OS, here we use it to indicated if it is allocated */
 	byte base_low : 4;
 	word base_high;
 }PAGE_ITEM, *PAGE_DIRECTORY_TABLE, *PAGE_TABLE;
@@ -86,8 +93,9 @@ extern PAGE_ITEM page_dir_table[MAX_NUM_OF_PAGE_TABLE];
 extern PAGE_ITEM page_table[MAX_NUM_OF_PAGE_TABLE][NUM_OF_PAGE];
 #endif
 
-/* Implemented in start_page.asm */
+/* Implemented in page.asm */
 extern void start_paging();
+extern dword get_page_fault_addr();
 
 /* Implemented in memory.c */
 void init_page();

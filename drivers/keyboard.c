@@ -30,7 +30,7 @@ static const char sc_ascii[] =
 		'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '
 };
 
-void keyboard_callback(INTERRUPT_STACK_REGS regs)
+void keyboard_callback(THREAD_CONTEXT regs)
 {
 	UNUSED(regs);
 
