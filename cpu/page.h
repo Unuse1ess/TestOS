@@ -103,6 +103,6 @@ dword get_phys_addr(dword virt_addr);
 
 /* Call back function of ISR */
 void CALLBACK gp_handler();
-void CALLBACK page_fault_handler();
+void CALLBACK pf_handler();
 
 #endif

@@ -32,10 +32,6 @@
 /* TI bit */
 #define TI_LOCAL_DESCRIPTOR		4
 
-/* Selector for local task */
-#define TASK_CS					(RPL_RING3 | TI_LOCAL_DESCRIPTOR)
-#define TASK_DS					(8 | RPL_RING3 | TI_LOCAL_DESCRIPTOR)
-
 
 /* x86 CPU only has 256 interrupts */
 #define NUM_OF_INT_DESC 256
@@ -49,7 +45,11 @@
 
  /* Kernel's segment selectors */
 #define KERNEL_CS							0x08			/* #1 in GDT */
-#define KERNEL_DS							0x0c			/* #2 in GDT */
+#define KERNEL_DS							0x10			/* #2 in GDT */
+
+/* Selector for local task */
+#define TASK_CS					(RPL_RING3 | TI_LOCAL_DESCRIPTOR)
+#define TASK_DS					(8 | RPL_RING3 | TI_LOCAL_DESCRIPTOR)
 
 /*										Structure of segment descriptor
  *  63																									0
@@ -169,6 +169,8 @@
 #define USE_SP								0x00
 
 
+#define TSS_IO_BITMAP_END					0xFF
+
 /* Cancel the alignment */
 #pragma pack(push, 1)
 
@@ -233,6 +235,7 @@ typedef struct
 
 	word trap_flag;
 	word io_bitmap_base;
+	word io_bitmap_end;
 } TASK_STATE_SEGMENT;
 
 /* Pop previous alignment out */

@@ -1,6 +1,7 @@
 #include "timer.h"
 #include "idt.h"
 #include "../drivers/ports.h"
+#include "../drivers/screen.h"
 #include "../cpu/isr.h"
 #include "../include/function.h"
 

@@ -15,11 +15,11 @@ global _restart
 	
 ; Prototype: void restart()
 _restart:
-	mov esp, [_proc_table]
-	add esp, [_proc_offset]
+	mov esp, _proc_table				; Let esp points to the process table
+	add esp, [_proc_offset]				; Let esp points to process that is ready
 
 	lldt [esp + LDTR]
-	lea eax, [esp + STACK_TOP]
+	lea eax, [esp + SIZE_OF_STACK]
 	mov [_tss + TSS_ESP0], eax
 	
 	pop gs

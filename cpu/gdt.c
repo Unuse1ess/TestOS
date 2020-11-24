@@ -58,12 +58,12 @@ word add_global_descriptor(dword seg_base, dword seg_limit, byte authority, byte
 word add_ldt_descriptor(dword seg_base, dword seg_limit)
 {
 	return add_global_descriptor(seg_base, seg_limit,
-		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | LDT_DESCRIPTOR, 0);
+		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | LDT_DESCRIPTOR, USE_32BITS_OPERAND);
 }
 
 /* Add a TSS descriptor to GDT and return the selector */
 word add_tss_descriptor(dword seg_base, dword seg_limit)
 {
-	return add_global_descriptor(seg_base, seg_limit,
-		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | AVAILABLE_386TSS, 0);
+	return add_global_descriptor(seg_base, seg_limit - 1,
+		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | AVAILABLE_386TSS, USE_32BITS_OPERAND);
 }

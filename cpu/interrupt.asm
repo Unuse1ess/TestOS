@@ -2,6 +2,7 @@
 
 [bits 32]
 
+
 ; Defined in isr.c
 [extern _isr_handler]
 [extern _irq_handler]
@@ -59,24 +60,32 @@ _irq_common_stub:
     mov fs, ax
     mov gs, ax
 
-;	cmp ax, [esp + 16]				; Change the esp if privilege level is changed
-;	je no_change1
+	cmp ax, [esp + DSREG]				; Change the esp if privilege level is changed
+	je no_change1
 
-;	mov esp, KERNEL_STACK_BASE
+	lea esi, [esp + SIZE_OF_STACK]		; Copy stack data from user stack
+	mov edi, KERNEL_STACK_BASE - 4
+	mov ecx, SIZE_OF_STACK
+	shr ecx, 2
+
+	std
+	rep movsd
+
+	mov esp, edi
 
 no_change1:
     call _irq_handler
 
-;	mov ax, ss
-;	cmp ax, [esp + 16]
-;	je no_change2
+	mov ax, ss
+	cmp ax, [esp + 12]
+	je no_change2
 
-;	mov esp, [_proc_table]
-;	add esp, [_proc_offset]
+	mov esp, _proc_table
+	add esp, [_proc_offset]
 	
 no_change2:
-;	lea eax, [esp + STACK_TOP]
-;	mov dword [_tss + TSS_ESP0], eax
+	lea eax, [esp + SIZE_OF_STACK]
+	mov dword [_tss + TSS_ESP0], eax
 
 	pop gs
 	pop fs

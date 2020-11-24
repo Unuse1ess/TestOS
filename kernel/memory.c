@@ -27,8 +27,7 @@ __attribute__((section(".PG_TBL")))
 PAGE_ITEM page_table[MAX_NUM_OF_PAGE_TABLE][NUM_OF_PAGE];
 
 struct __dummy
-{
-};
+{};
 
 /* Initialization of kernel pages and enter page mode. */
 void init_page()
@@ -73,7 +72,7 @@ void CALLBACK gp_handler(THREAD_CONTEXT regs)
 }
 
 /* Handler of page fault */
-void CALLBACK page_fault_handler(THREAD_CONTEXT regs)
+void CALLBACK pf_handler(THREAD_CONTEXT regs)
 {
 	UNUSED(regs);
 

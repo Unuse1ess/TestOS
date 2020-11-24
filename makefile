@@ -44,7 +44,7 @@ run: os-image.bin
 # Open the connection to qemu and load our kernel-object file with symbols
 # -d guest_errors,int
 debug: os-image.bin kernel.elf
-	qemu-system-i386 -s -fda os-image.bin -d guest_errors,int &
+	qemu-system-i386 -s -fda os-image.bin -d guest_errors,cpu_reset &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 # Write the kernel to a floppy image used by bochs

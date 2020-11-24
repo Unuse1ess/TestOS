@@ -84,7 +84,7 @@ extern void irq15();
 #define INT_DEBUG				3
 #define INT_OVERFLOW			4
 #define INT_BOUND_CHECK			5
-#define INT_INVALID_OPCODE		6
+#define INT_UNDEFINED_OPCODE	6
 #define INT_NO_FPU				7
 #define INT_DOUBLE_FAULTS		8
 //#define INT_			9
@@ -92,7 +92,7 @@ extern void irq15();
 #define INT_SS_FAULT			11
 #define INT_SET_NOT_EXISTS		12
 #define INT_GENERAL_PROTECTION	13
-#define INT_PAGE_NOT_EXISTS		14
+#define INT_PAGE_FAULT			14
 
 /* Map IRQs to corresponding interrupt number */
 #define INT_IRQ0 32

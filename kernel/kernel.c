@@ -24,6 +24,7 @@
 word os_ver = MAKEWORD(MINOR_OS_VER, MAJOR_OS_VER);
 char os_name[] = OS_NAME;
 
+extern void irq_common_stub();
 
 void print_os_info()
 {
@@ -45,10 +46,12 @@ void user_input(char* input)
 	//kprint("\n> ");
 }
 
+extern dword tick;
+
 void test()
 {
-//	__asm("cli");
 	kprintf("PROCESS\n");
+
 	while (1);
 }
 
@@ -66,8 +69,10 @@ void kernel_main()
 	clear_screen();
 	print_os_info();
 
-//	init_process((dword)test);
-//	restart(proc_table);
+	proc_offset = 0;
+
+	init_process((dword)test);
+	restart(proc_table);
 
 	/* Infinite loop, waiting for interrupts. */
 	while (1);

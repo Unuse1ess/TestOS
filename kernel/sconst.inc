@@ -23,8 +23,10 @@ CSREG			equ	EIPREG			+ 4
 EFLAGSREG		equ	CSREG			+ 4
 ESPREG			equ	EFLAGSREG		+ 4
 SSREG			equ	ESPREG			+ 4
-STACK_TOP		equ	SSREG			+ 4
-LDTR			equ	STACK_TOP
+LDTR			equ	SSREG			+ 4
 LDT				equ	LDTR			+ 4
 
 TSS_ESP0		equ					4
+
+SIZE_OF_THREAD_CONTEXT equ LDTR
+SIZE_OF_STACK equ LDTR

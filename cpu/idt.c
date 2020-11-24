@@ -115,7 +115,7 @@ void set_idt_gate(int n, dword handler)
 	idt[n].offset_high = HIWORD(handler);
 }
 
-void set_idt()
+void set_idtr()
 {
 	idtr.base = (dword)&idt;
 	idtr.limit = NUM_OF_INT_DESC * sizeof(IDT) - 1;
@@ -131,20 +131,21 @@ void set_interrupt_handler(byte n, ISR_HANDLER handler)
 void init_exceptions()
 {
 	set_interrupt_handler(INT_GENERAL_PROTECTION, gp_handler);
-	set_interrupt_handler(INT_PAGE_NOT_EXISTS, page_fault_handler);
+	set_interrupt_handler(INT_PAGE_FAULT, pf_handler);
 }
 
 void init_interrupts()
 {
 	init_idt();
+	/* Initialize CPU exceptions' handlers */
 	init_exceptions();
 
 	/* Load with ASM */
-	set_idt();
+	set_idtr();
 
 	init_irq();
 	/* IRQ0: timer */
-//	init_timer(50);
+	init_timer(50);
 	/* IRQ1: keyboard */
 	init_keyboard();
 
