@@ -28,7 +28,7 @@
 
 #define TASK_EFLAGS			0x3202
 
-#pragma pack(push, 4)
+#pragma pack(push, 1)
 
 /*	When interrupts happened, esp will points to eip in this structure,
  *	if there is privilege switch.
@@ -44,8 +44,9 @@ typedef struct
 
 typedef struct
 {
-	THREAD_CONTEXT regs;			/* +72 */
+	THREAD_CONTEXT regs;			/* Execute envrionment */
 	word ldtr;
+	word tr;
 	SEGMENT_DESCRIPTOR ldt[2];
 	dword pid;
 	char proc_name[16];

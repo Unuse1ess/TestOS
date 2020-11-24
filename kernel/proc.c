@@ -59,6 +59,6 @@ void init_process(dword start_addr)
 		proc_table[0].regs.ss = TASK_DS;
 	
 	proc_table[0].regs.eip = start_addr;
-	proc_table[0].regs.esp = 0x200000;
+	proc_table[0].regs.esp = 0x200000;			/* Should allocated by page */
 	proc_table[0].regs.eflags = TASK_EFLAGS;
 }
