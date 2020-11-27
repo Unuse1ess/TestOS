@@ -19,9 +19,7 @@ SEC_NUM_TO_READ		equ		0x35
 ; Tell the assembler where the program is.
 [org 0x7c00]
 [bits 16]
-;	mov   bx, 0x4107 
-;	mov   ax, 0x4f02
-;	int   0x10
+
 	; 1. Load the kernel into 0x1000.
 
 	; Let es:bx points to kernel's address.
@@ -51,6 +49,8 @@ SEC_NUM_TO_READ		equ		0x35
 	cmp al, SEC_NUM_TO_READ
 ;	jne disk_err
 
+	call setup_apm
+
 	; 2. Switch to 32-bit protected mode.
 
 	cli							; Clear interrupt flag
@@ -67,6 +67,32 @@ SEC_NUM_TO_READ		equ		0x35
 disk_err:
 	; TODO: Add error check and prompt
 	jmp $
+
+setup_apm:
+	; Setup APM
+	mov ax, 0x5303
+	xor bx, bx
+	int 0x15
+	
+	push ax
+	mov ax, 0x600
+	mov es, ax
+	pop ax
+
+	movzx eax, ax
+	mov es:[0], eax
+	mov es:[4], ebx
+	mov es:[8], cx
+	mov es:[10], si
+	mov es:[12], dx
+	mov es:[14], di
+
+	jnc apm_no_err
+	mov es:[2], ah
+	
+apm_no_err:
+	ret
+
 
 [bits 32]
 

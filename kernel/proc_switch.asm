@@ -11,7 +11,6 @@
 
 
 global _restart
-
 	
 ; Prototype: void restart()
 _restart:

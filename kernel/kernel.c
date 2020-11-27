@@ -18,6 +18,8 @@
 #include "../cpu/page.h"
 #include "../cpu/idt.h"
 #include "../include/stdlib.h"
+#include "../drivers/apm.h"
+#include "../drivers/ports.h"
 
 
 /* Definition of OS information */
@@ -51,6 +53,7 @@ extern dword tick;
 void test()
 {
 	kprintf("PROCESS\n");
+	kprintf("%d", (dword)&apm_data.call_gate - (dword)&apm_data);
 
 	while (1);
 }
@@ -61,6 +64,8 @@ void kernel_main()
 	init_gdt();				/* Reinitialize GDT and GDTR */
 	init_tss();
 
+	init_apm();
+
 //	init_page();			/* Initialize PDE and PTE */
 //	start_paging();			/* Enable page mode */
 
@@ -68,6 +73,11 @@ void kernel_main()
 
 	clear_screen();
 	print_os_info();
+
+	suspend();
+//	stand_by();
+//	reset();
+//	shutdown();
 
 	proc_offset = 0;
 

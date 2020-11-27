@@ -29,7 +29,7 @@ void init_ldt(LDT ldt)
 	ldt[0].seg_base_high = 0;
 
 	ldt[0].access_authority = SEG_PRESENT | DPL_RING3 | NORMAL_DESCPRITOR | SEG_EXECUTABLE | SEG_CS_READ_ONLY;
-	ldt[0].attribute = COUNT_BY_4KB | USE_32BITS_OPERAND;
+	ldt[0].attribute = SA_COUNT_BY_4KB | SA_USE_32BITS;
 
 	ldt[1].seg_limit_low = 0xffff;
 	ldt[1].seg_limit_high = 0xf;
@@ -39,7 +39,7 @@ void init_ldt(LDT ldt)
 	ldt[1].seg_base_high = 0;
 
 	ldt[1].access_authority = SEG_PRESENT | DPL_RING3 | NORMAL_DESCPRITOR | SEG_DATA | SEG_DS_READ_WRITE;
-	ldt[1].attribute = COUNT_BY_4KB | USE_32BITS_OPERAND;
+	ldt[1].attribute = SA_COUNT_BY_4KB | SA_USE_32BITS;
 }
 
 void init_process(dword start_addr)

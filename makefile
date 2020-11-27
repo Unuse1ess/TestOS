@@ -4,7 +4,7 @@
 
 # List all source file
 C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
-ASM_SOURCES = $(wildcard libc/*.asm kernel/*.asm cpu/*.asm)
+ASM_SOURCES = $(wildcard libc/*.asm kernel/*.asm cpu/*.asm drivers/*.asm)
 # List all C header files
 HEADERS = $(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h include/*.h)
 
@@ -32,11 +32,11 @@ kernel.bin: kernel.tmp
 # cpu/interrupt.o cpu/asm_gdt.o cpu/start_page.o
 # Temporary PE file of kernel code.
 kernel.tmp: boot/kernel_entry.o ${OBJ}
-	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 --section-start .PG_TBL=0x10000 $^
+	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 --section-start .PG_TBL=0x10000 --section-start .apm=0x6000 $^
 
 # Used for debugging purposes
 kernel.elf: boot/kernel_entry.o ${OBJ}
-	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 --section-start .PG_TBL=0x10000 $^ 
+	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 --section-start .PG_TBL=0x10000 --section-start .apm=0x6000 $^ 
 
 run: os-image.bin
 	qemu-system-i386 -fda os-image.bin
@@ -44,7 +44,7 @@ run: os-image.bin
 # Open the connection to qemu and load our kernel-object file with symbols
 # -d guest_errors,int
 debug: os-image.bin kernel.elf
-	qemu-system-i386 -s -fda os-image.bin -d guest_errors,cpu_reset &
+	qemu-system-i386 -s -fda os-image.bin -d guest_errors,cpu_reset,int &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 # Write the kernel to a floppy image used by bochs

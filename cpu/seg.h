@@ -61,6 +61,8 @@
  * 
  *									Structure of BYTE 6
  *	BYTE 6
+ *	+-------------------------------------------------------+
+ *	|						 Attributes						|
  *	+---------------+-----------+---------------+-----------+-----------------------+
  *	|	BIT 7		|	BIT 6	|	BIT 5		|	BIT 4	|		BIT 3~0			|	
  *	+---------------+-----------+---------------+-----------+-----------------------+
@@ -151,22 +153,18 @@
 
 /* Macros for segment descriptor's attribute */
 /* Granularity of segment limit */
-#define	COUNT_BY_4KB						0x08
-#define	COUNT_BY_BYTE						0x00
+#define	SA_COUNT_BY_4KB						0x08
+#define	SA_COUNT_BY_BYTE					0x00
 
 
 /* D/B bit, bit 14 in property */
-/* When it is in executable code segment */
-#define USE_32BITS_OPERAND					0x04
-#define USE_16BITS_OPERAND					0x00
+/* When it is in executable code segment or stack segment */
+#define SA_USE_32BITS						0x04
+#define SA_USE_16BITS						0x00
 
 /* When it is in expand-down data segment */
-#define UPPERBOUND_4GB						0x04
-#define UPPERBOUND_64KB						0x00
-
-/* When it is describing statck segment */
-#define USE_ESP								0x04
-#define USE_SP								0x00
+#define SA_UPPERBOUND_4GB					0x04
+#define SA_UPPERBOUND_64KB					0x00
 
 
 #define TSS_IO_BITMAP_END					0xFF
@@ -190,25 +188,26 @@ typedef struct
 	byte seg_base_high;
 }SEGMENT_DESCRIPTOR, * GDT, * LDT;
 
-/* Meta structure of GDTR */
-typedef struct
-{
-	word limit;
-	dword base;
-}GDTR;
-
-/* Structure of interrupt descriptor */
+/* Structure of gate descriptor */
 typedef struct
 {
 	word offset_low;
 	word seg_sel;
-	byte reserved;
-	byte flags;
-	word offset_high;
-} INTERRUPT_DESCRIPTOR, *IDT;
 
-/* Meta structure of IDTR, is the same as GDTR */
-typedef GDTR IDTR;
+	byte param_cnt : 5;
+	byte reserved : 3;
+
+	byte access_authority;
+	word offset_high;
+}GATE_DESCRIPTOR, INTERRUPT_DESCRIPTOR, *IDT;
+
+/* Meta structure of GDTR, IDTR */
+typedef struct
+{
+	word limit;
+	dword base;
+}GDTR, IDTR;
+
 
 /* Structure of task-state segment */
 typedef struct
@@ -253,6 +252,7 @@ void set_idt();
 
 #ifndef GDT_C
 extern SEGMENT_DESCRIPTOR gdt[NUM_OF_GDT_DESC];
+extern GATE_DESCRIPTOR* gate_desc_tbl;
 extern GDTR gdtr;
 #endif
 
@@ -261,7 +261,8 @@ extern GDTR gdtr;
 void init_gdt();
 word add_ldt_descriptor(dword seg_base, dword seg_limit);
 word add_tss_descriptor(dword seg_base, dword seg_limit);
-
+word add_global_descriptor(dword seg_base, dword seg_limit, byte authority, byte attr);
+word add_gate_descriptor(word seg_sel, dword offset, byte authority, byte param_cnt);
 
 #ifndef TSS_C
 extern TASK_STATE_SEGMENT tss;

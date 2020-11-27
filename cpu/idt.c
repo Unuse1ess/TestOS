@@ -110,8 +110,11 @@ void set_idt_gate(int n, dword handler)
 {
 	idt[n].offset_low = LOWORD(handler);
 	idt[n].seg_sel = KERNEL_CS;
+
+	idt[n].param_cnt = 0;
 	idt[n].reserved = 0;
-	idt[n].flags = 0x8E;
+
+	idt[n].access_authority = SEG_PRESENT | SYSTEM_DESCPRITOR | INTERRUPT_GATE_386;
 	idt[n].offset_high = HIWORD(handler);
 }
 

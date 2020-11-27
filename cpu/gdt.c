@@ -15,6 +15,7 @@
 extern void reload_gdtr(GDTR* p);
 
 SEGMENT_DESCRIPTOR gdt[NUM_OF_GDT_DESC];
+GATE_DESCRIPTOR* gate_desc_tbl;
 GDTR gdtr;
 
 static word avl_gdt_index;
@@ -28,6 +29,7 @@ void init_gdt()
 	gdtr.limit = sizeof(gdt) - 1;
 
 	reload_gdtr(&gdtr);
+	gate_desc_tbl = (GATE_DESCRIPTOR*)&gdt;
 }
 
 /* Add a descriptor to GDT and return the selector */
@@ -58,12 +60,33 @@ word add_global_descriptor(dword seg_base, dword seg_limit, byte authority, byte
 word add_ldt_descriptor(dword seg_base, dword seg_limit)
 {
 	return add_global_descriptor(seg_base, seg_limit,
-		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | LDT_DESCRIPTOR, USE_32BITS_OPERAND);
+		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | LDT_DESCRIPTOR, SA_USE_32BITS);
 }
 
 /* Add a TSS descriptor to GDT and return the selector */
 word add_tss_descriptor(dword seg_base, dword seg_limit)
 {
 	return add_global_descriptor(seg_base, seg_limit - 1,
-		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | AVAILABLE_386TSS, USE_32BITS_OPERAND);
+		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | AVAILABLE_386TSS, SA_USE_32BITS);
+}
+
+/* Add a call gate to GDT and return the selector */
+word add_gate_descriptor(word seg_sel, dword offset, byte authority, byte param_cnt)
+{
+	if (avl_gdt_index > NUM_OF_GDT_DESC)
+		return 0;
+
+	gate_desc_tbl[avl_gdt_index].seg_sel = seg_sel;
+
+	gate_desc_tbl[avl_gdt_index].offset_low = LOWORD(offset);
+	gate_desc_tbl[avl_gdt_index].offset_high = HIWORD(offset);
+
+	gate_desc_tbl[avl_gdt_index].param_cnt = param_cnt;
+	gate_desc_tbl[avl_gdt_index].access_authority = authority;
+	gate_desc_tbl[avl_gdt_index].reserved = 0;
+
+	/* Next available index */
+	avl_gdt_index++;
+
+	return (avl_gdt_index - 1) << 3;
 }
