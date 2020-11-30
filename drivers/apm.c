@@ -11,9 +11,9 @@
 #define APM_C
 
 #include "../kernel/types.h"
+#include "../cpu/seg.h"
 #include "screen.h"
 #include "apm.h"
-#include "../cpu/seg.h"
 
 
 /*	Apm data most be at 0x6000 */
@@ -72,7 +72,9 @@ void init_apm()
 	apm_data.call_gate = add_gate_descriptor(apm_data.cs_32bits_descriptor, apm_data.pm_entry_point,
 		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | CALL_GATE_386, 0);
 
-	/* Modify the call gate selector in apm jump stub. */
+	/* Modify the call gate selector in apm jump stub,
+	 * enabling CPU find the correct call gate.
+	 */
 	*(word*)&apm_jump_stub[5] = apm_data.call_gate;
 }
 

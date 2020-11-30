@@ -19,6 +19,7 @@ global _reset
 global _suspend
 global _apm_jump_stub
 
+
 ; Prototype: int suspend();
 _suspend:
 	push ebp

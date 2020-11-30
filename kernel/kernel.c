@@ -53,7 +53,7 @@ extern dword tick;
 void test()
 {
 	kprintf("PROCESS\n");
-	kprintf("%d", (dword)&apm_data.call_gate - (dword)&apm_data);
+	__asm("int $3");
 
 	while (1);
 }
@@ -62,8 +62,6 @@ void test()
 void kernel_main()
 {
 	init_gdt();				/* Reinitialize GDT and GDTR */
-	init_tss();
-
 	init_apm();
 
 //	init_page();			/* Initialize PDE and PTE */
@@ -74,15 +72,14 @@ void kernel_main()
 	clear_screen();
 	print_os_info();
 
-	suspend();
+//	suspend();
 //	stand_by();
 //	reset();
 //	shutdown();
 
-	proc_offset = 0;
-
 	init_process((dword)test);
-	restart(proc_table);
+	rdy_proc = &proc_table[0];
+	start_process(&proc_table[0]/*, &tss[0]*/);
 
 	/* Infinite loop, waiting for interrupts. */
 	while (1);

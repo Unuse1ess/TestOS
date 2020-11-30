@@ -5,11 +5,11 @@
  *	Implementation of string.h, which is part of C library.
  *-------------------------------------------------------------*/
 
+#include "../kernel/types.h"
 #include "../include/string.h"
 #include "../include/stdarg.h"
 #include "../include/stdlib.h"
 #include "../include/ctype.h"
-#include "../kernel/types.h"
 
 /* itoa() is not a standard C library function! */
 char* itoa(PITOA_ARGS pArgs)

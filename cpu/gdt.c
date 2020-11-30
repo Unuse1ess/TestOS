@@ -9,6 +9,8 @@
  *-------------------------------------------------------------*/
 
 #define GDT_C
+
+#include "../kernel/types.h"
 #include "seg.h"
 
  /* Implemented in asm_gdt.asm */
@@ -89,4 +91,13 @@ word add_gate_descriptor(word seg_sel, dword offset, byte authority, byte param_
 	avl_gdt_index++;
 
 	return (avl_gdt_index - 1) << 3;
+}
+
+dword get_descriptor_base_addr(word tss_sel)
+{
+	word index = tss_sel >> 3;
+
+	return (dword)gdt[index].seg_base_high << 24 |
+		(dword)gdt[index].seg_base_mid << 16 |
+		(dword)gdt[index].seg_base_low;
 }

@@ -1,0 +1,28 @@
+; Common ISR code
+;_isr_common_stub:
+	pushad			; Save CPU state
+	push ds
+	push es
+	push fs
+	push gs
+
+	mov ax, ss		; Kernel data segment descriptor
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	
+	; Call C handler
+	; Notice that C codes assume ds, ss, es are the same and flat.
+	call _isr_handler
+	
+    ; Restore state
+	pop ds
+	pop es
+	pop fs
+	pop gs
+	popa
+	add esp, 8	; Cleans up the pushed error code, pushed ISR number and ret_addr
+
+	sti
+	iretd		; Pops CS, EIP, EFLAGS, SS, and ESP

@@ -10,11 +10,12 @@
 
 #define IDT_C
 
-#include "idt.h"
+#include "../kernel/types.h"
 #include "seg.h"
 #include "isr.h"
-#include "../drivers/keyboard.h"
+#include "idt.h"
 #include "../drivers/ports.h"
+#include "../drivers/keyboard.h"
 #include "timer.h"
 #include "page.h"
 

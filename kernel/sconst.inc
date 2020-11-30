@@ -1,7 +1,7 @@
 KERNEL_STACK_BASE equ 0x90000
 
 
-; Structure of PROCESS
+; Structure of THREAD_CONTEXT
 STACK_BASE		equ					0
 GSREG			equ	STACK_BASE
 FSREG			equ	GSREG			+ 4
@@ -15,16 +15,18 @@ EBXREG			equ	KERNEL_ESPREG	+ 4
 EDXREG			equ	EBXREG			+ 4
 ECXREG			equ	EDXREG			+ 4
 EAXREG			equ	ECXREG			+ 4
-RET_ADR			equ	EAXREG			+ 4
-INT_NUM			equ RET_ADR			+ 4
+INT_NUM			equ EAXREG			+ 4
 ERR_CODE		equ INT_NUM			+ 4
 EIPREG			equ	ERR_CODE		+ 4
 CSREG			equ	EIPREG			+ 4
 EFLAGSREG		equ	CSREG			+ 4
 ESPREG			equ	EFLAGSREG		+ 4
 SSREG			equ	ESPREG			+ 4
+; End of THREAD_CONTEXT
+
 LDTR			equ	SSREG			+ 4
-LDT				equ	LDTR			+ 4
+TR				equ LDTR			+ 2
+LDT				equ	TR				+ 2
 
 TSS_ESP0		equ					4
 

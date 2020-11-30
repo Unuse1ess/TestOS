@@ -22,8 +22,10 @@
  *	OCW: Operation Command Word
  */
 
+
 #include "../kernel/types.h"
 #include "../kernel/proc.h"
+
 
 /* Interrupt 0x00 ~ 0x1F are definded by CPU, in protect mode */
 /* Defined and implemented in interrupt.asm */

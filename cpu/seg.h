@@ -14,7 +14,6 @@
 
 #include "../kernel/types.h"
 
-
 /* Privilege level */
 /* Only use ring0 and ring3. */
 #define RING0					0
@@ -263,14 +262,7 @@ word add_ldt_descriptor(dword seg_base, dword seg_limit);
 word add_tss_descriptor(dword seg_base, dword seg_limit);
 word add_global_descriptor(dword seg_base, dword seg_limit, byte authority, byte attr);
 word add_gate_descriptor(word seg_sel, dword offset, byte authority, byte param_cnt);
-
-#ifndef TSS_C
-extern TASK_STATE_SEGMENT tss;
-#endif
-
-void init_tss();
-
-extern void load_tr(word tss_sel);
+dword get_descriptor_base_addr(word tss_sel);
 
 
 #endif

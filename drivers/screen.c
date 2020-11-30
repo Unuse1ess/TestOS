@@ -9,12 +9,12 @@
  *-------------------------------------------------------------*/
 
 #include "../kernel/types.h"
+#include "ports.h"
+#include "screen.h"
 #include "../include/string.h"
 #include "../include/stdlib.h"
 #include "../include/stdarg.h"
 #include "../kernel/utility.h"
-#include "ports.h"
-#include "screen.h"
 
 
  /* Use the VGA ports to get the current cursor position

@@ -2,67 +2,41 @@
 
 [bits 32]
 
+; Defined in task_switch.asm
+[extern _start_process]
+
+; Defined in proc.c
+[extern _rdy_proc]
+
+; Defined in gdt.c
+[extern _get_descriptor_base_addr]
 
 ; Defined in isr.c
 [extern _isr_handler]
 [extern _irq_handler]
 
-; Defined in tss.c
-[extern _tss]
-
-; Defined in proc.c
-[extern _proc_table]
-[extern _proc_offset]
-
-; Common ISR code
+; Common ISR codes
 _isr_common_stub:
-	sub esp, 4		; Jump over ret_addr
-	pushad			; Save CPU state
-	push ds
-	push es
-	push fs
-	push gs
-
-	mov ax, ss		; Kernel data segment descriptor
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-	
-	; Call C handler
-	; Notice that C codes assume ds, ss, es are the same and flat.
-	call _isr_handler
-	
-    ; Restore state
-	pop ds
-	pop es
-	pop fs
-	pop gs
-	popa
-	add esp, 12	; Cleans up the pushed error code, pushed ISR number and ret_addr
-
-	sti
-	iretd		; Pops CS, EIP, EFLAGS, SS, and ESP
-
-; Common IRQ code. Identical to ISR code except for the 'call' 
-; and the 'pop ebx'
-_irq_common_stub:
-	sub esp, 4
+	; Save context
     pusha
 	push ds
 	push es
 	push fs
 	push gs
 
+	; Switch to kernel data segment selector.
+	; Notice that ss has been already changed to
+	; kernel data segment by CPU automatically.
     mov ax, ss
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
 
-	cmp ax, [esp + DSREG]				; Change the esp if privilege level is changed
-	je no_change1
+	cmp ax, [esp + DSREG]				; if(cur_ss == prev_ds)
+	je no_change1						;	goto no_change1;
 
+	; Change the esp if privilege level is changed
 	lea esi, [esp + SIZE_OF_STACK]		; Copy stack data from user stack
 	mov edi, KERNEL_STACK_BASE - 4
 	mov ecx, SIZE_OF_STACK
@@ -70,29 +44,40 @@ _irq_common_stub:
 
 	std
 	rep movsd
+	cld
 
-	mov esp, edi
-
+	mov esp, edi						; New esp for kernel, used for function call.
+	
 no_change1:
-    call _irq_handler
+	cmp dword [esp + INT_NUM], 32		; if(int_num < 32 || int_num > 47)
+	jb invoke_isr_handler				;	irq_handler();
+	cmp dword [esp + INT_NUM], 47
+	ja invoke_isr_handler
 
-	mov ax, ss
-	cmp ax, [esp + 12]
+    call _irq_handler					; else
+	jmp end_if							;	isr_handler();
+
+invoke_isr_handler:
+	call _isr_handler
+
+end_if:
+	mov ax, ss							; if(cur_ss != prev_ds)
+	cmp ax, [esp + DSREG]				;	start_process(rdy_proc);
 	je no_change2
 
-	mov esp, _proc_table
-	add esp, [_proc_offset]
-	
-no_change2:
-	lea eax, [esp + SIZE_OF_STACK]
-	mov dword [_tss + TSS_ESP0], eax
+	mov eax, [_rdy_proc]
+	push eax
+	call _start_process
 
+; If interrupt happened in kernel mode,
+; it is no need to restart process, at least so far.
+no_change2:
 	pop gs
 	pop fs
 	pop es
 	pop ds
     popad
-    add esp, 12
+    add esp, 8
 
     sti
     iretd
@@ -378,95 +363,95 @@ _irq0:
 	cli
 	push byte 0
 	push byte 32
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq1:
 	cli
 	push byte 1
 	push byte 33
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq2:
 	cli
 	push byte 2
 	push byte 34
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq3:
 	cli
 	push byte 3
 	push byte 35
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq4:
 	cli
 	push byte 4
 	push byte 36
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq5:
 	cli
 	push byte 5
 	push byte 37
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq6:
 	cli
 	push byte 6
 	push byte 38
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq7:
 	cli
 	push byte 7
 	push byte 39
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq8:
 	cli
 	push byte 8
 	push byte 40
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq9:
 	cli
 	push byte 9
 	push byte 41
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq10:
 	cli
 	push byte 10
 	push byte 42
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq11:
 	cli
 	push byte 11
 	push byte 43
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq12:
 	cli
 	push byte 12
 	push byte 44
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq13:
 	cli
 	push byte 13
 	push byte 45
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq14:
 	cli
 	push byte 14
 	push byte 46
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
 _irq15:
 	cli
 	push byte 15
 	push byte 47
-	jmp _irq_common_stub
+	jmp _isr_common_stub
 
