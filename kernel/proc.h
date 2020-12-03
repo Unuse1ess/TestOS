@@ -20,13 +20,13 @@
  * This value means,
  * IOPL = 0, IF = 1.
  * Others are default 0.
- * 0x0202
+ * 0x0202 0x3202
  */
 
 #define IOPL_3				0x3000
 #define IOPL_0				0x0000
 
-#define TASK_EFLAGS			0x3202
+#define TASK_EFLAGS			0x0202
 
 #pragma pack(push, 1)
 

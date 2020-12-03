@@ -18,6 +18,7 @@
 #include "../drivers/keyboard.h"
 #include "timer.h"
 #include "page.h"
+#include "../kernel/sys_call.h"
 
 INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
 IDTR idtr;
@@ -122,8 +123,9 @@ void set_idt_gate(int n, dword handler)
 void set_idtr()
 {
 	idtr.base = (dword)&idt;
-	idtr.limit = NUM_OF_INT_DESC * sizeof(IDT) - 1;
+	idtr.limit = sizeof(idt) - 1;
 
+	/* A thorn in my codes![doge] */
 	__asm volatile("lidtl (%0)" : : "r" (&idtr));
 }
 

@@ -4,7 +4,7 @@
 
 # List all source file
 C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
-ASM_SOURCES = $(wildcard libc/*.asm kernel/*.asm cpu/*.asm drivers/*.asm)
+ASM_SOURCES = $(wildcard libc/*.asm kernel/*.asm kernel/sys_call/*.asm cpu/*.asm drivers/*.asm)
 # List all C header files
 HEADERS = $(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h include/*.h)
 

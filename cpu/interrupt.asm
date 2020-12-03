@@ -140,6 +140,9 @@ global _irq13
 global _irq14
 global _irq15
 
+; System call
+global _isr128
+
 ; 0: Divide By Zero Exception
 _isr0:
     cli
@@ -455,3 +458,9 @@ _irq15:
 	push byte 47
 	jmp _isr_common_stub
 
+; System call
+_isr128:
+	cli
+	push 0
+	push 0x80
+	jmp _isr_common_stub

@@ -69,7 +69,7 @@ void isr_handler(THREAD_CONTEXT r)
 {
 	if (interrupt_handlers[r.int_no] != 0)
 	{
-		(*interrupt_handlers[r.int_no])(r);
+		(*interrupt_handlers[r.int_no])(&r);
 	}
 	else
 	{
@@ -82,7 +82,7 @@ void isr_handler(THREAD_CONTEXT r)
 void irq_handler(THREAD_CONTEXT r)
 {
 	if (interrupt_handlers[r.int_no] != 0)
-		(*interrupt_handlers[r.int_no])(r);
+		(*interrupt_handlers[r.int_no])(&r);
 
 	/* After every interrupt we need to send an EOI to the PICs
 	 * or they will not send another interrupt again.

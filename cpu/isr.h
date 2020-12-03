@@ -80,6 +80,8 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
+extern void isr128();
+
 #define INT_DIVERR				0
 #define INT_STEP_DEBUG			1
 #define INT_NMI					2
@@ -95,6 +97,9 @@ extern void irq15();
 #define INT_SET_NOT_EXISTS		12
 #define INT_GENERAL_PROTECTION	13
 #define INT_PAGE_FAULT			14
+
+/* System call */
+#define INT_SYSCALL				0x80
 
 /* Map IRQs to corresponding interrupt number */
 #define INT_IRQ0 32
@@ -115,7 +120,7 @@ extern void irq15();
 #define INT_IRQ15 47
 
 
-typedef void (CALLBACK *ISR_HANDLER)(THREAD_CONTEXT);
+typedef void (CALLBACK *ISR_HANDLER)(THREAD_CONTEXT*);
 
 #ifndef ISR_C
 extern ISR_HANDLER interrupt_handlers[256];

@@ -20,6 +20,7 @@
 #include "../include/stdlib.h"
 #include "../drivers/apm.h"
 #include "../drivers/ports.h"
+#include "sys_call.h"
 
 
 /* Definition of OS information */
@@ -52,8 +53,9 @@ extern dword tick;
 
 void test()
 {
-	kprintf("PROCESS\n");
-	__asm("int $3");
+	void print_screen(char*);
+
+	print_screen("System call with one argument.\n");
 
 	while (1);
 }
@@ -68,6 +70,7 @@ void kernel_main()
 //	start_paging();			/* Enable page mode */
 
 	init_interrupts();		/* Initialize IDT and IDTR, and enable interrupts */
+	init_sys_call();		/* Initialize system call */
 
 	clear_screen();
 	print_os_info();
@@ -79,7 +82,7 @@ void kernel_main()
 
 	init_process((dword)test);
 	rdy_proc = &proc_table[0];
-	start_process(&proc_table[0]/*, &tss[0]*/);
+	start_process(&proc_table[0]);
 
 	/* Infinite loop, waiting for interrupts. */
 	while (1);

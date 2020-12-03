@@ -8,6 +8,7 @@
 #include "../include/string.h"
 #include "../include/function.h"
 
+
 #define BACKSPACE 0x0E
 #define ENTER 0x1C
 
@@ -31,18 +32,17 @@ static const char sc_ascii[] =
 		'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '
 };
 
-void keyboard_callback(THREAD_CONTEXT regs)
+void keyboard_callback(THREAD_CONTEXT* regs)
 {
 	UNUSED(regs);
 
-	/* The PIC leaves us the scancode in port 0x60 */
+	/* The 8042 leaves us the scancode in port 0x60, the output buffer register */
 	byte scancode = port_byte_in(0x60);
 
 	if (scancode > SC_MAX)
 		return;
 	if (scancode == BACKSPACE)
 	{
-		//backspace(key_buffer);
 		kputchar('\b');
 	}
 	else if (scancode == ENTER)

@@ -7,7 +7,7 @@
 
 dword tick = 0;
 
-static void timer_callback(THREAD_CONTEXT regs)
+static void timer_callback(THREAD_CONTEXT* regs)
 {
 	tick++;
 	UNUSED(regs);
