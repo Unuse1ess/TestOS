@@ -12,7 +12,9 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#include "types.h"
+#ifndef TYPES_H
+#error "kernel/types.h" is not included
+#endif
 
 void* memset_w(word* dst, word value, unsigned word_cnt);
 

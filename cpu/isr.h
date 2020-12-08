@@ -14,6 +14,15 @@
 #ifndef ISR_H
 #define ISR_H
 
+#ifndef TYPES_H
+#error "kernel/types.h" is not included
+#endif
+
+#ifndef TASK_H
+#error "kernel/task.h" is not included!
+#endif
+
+
 /*	Some words:
  *	ISR: Interrupt Service Routine
  *	IRQ: Interrupt Request
@@ -21,11 +30,6 @@
  *	ICW: Initialization Command Word
  *	OCW: Operation Command Word
  */
-
-
-#include "../kernel/types.h"
-#include "../kernel/proc.h"
-
 
 /* Interrupt 0x00 ~ 0x1F are definded by CPU, in protect mode */
 /* Defined and implemented in interrupt.asm */
@@ -80,6 +84,10 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
+/* Called when hard disk is ready */
+extern void isr118();
+
+/* System call*/
 extern void isr128();
 
 #define INT_DIVERR				0
@@ -119,11 +127,8 @@ extern void isr128();
 #define INT_IRQ14 46
 #define INT_IRQ15 47
 
-
 typedef void (CALLBACK *ISR_HANDLER)(THREAD_CONTEXT*);
 
-#ifndef ISR_C
-extern ISR_HANDLER interrupt_handlers[256];
-#endif
+void set_interrupt_handler(byte n, ISR_HANDLER handler);
 
 #endif

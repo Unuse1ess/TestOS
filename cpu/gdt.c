@@ -8,19 +8,21 @@
  *
  *-------------------------------------------------------------*/
 
-#define GDT_C
-
 #include "../kernel/types.h"
 #include "seg.h"
 
- /* Implemented in asm_gdt.asm */
+
+ /* Implemented in reload_gdtr.asm */
 extern void reload_gdtr(GDTR* p);
 
-SEGMENT_DESCRIPTOR gdt[NUM_OF_GDT_DESC];
-GATE_DESCRIPTOR* gate_desc_tbl;
-GDTR gdtr;
-
+/* Private varibales */
+static SEGMENT_DESCRIPTOR gdt[NUM_OF_GDT_DESC];
+static GATE_DESCRIPTOR* gate_desc_tbl;
+static GDTR gdtr;
 static word avl_gdt_index;
+
+
+/* Public functions */
 
 /* Reset the gdtr and gdt, and place them to a known place. */
 void init_gdt()

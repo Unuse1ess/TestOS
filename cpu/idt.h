@@ -11,8 +11,9 @@
 #ifndef IDT_H
 #define IDT_H
 
-#include "seg.h"
-#include "isr.h"
+#ifndef SEG_H
+#error "cpu/seg.h" is not included
+#endif
 
 
  /* Macros for 8259A, which is a PIC. */
@@ -33,20 +34,14 @@
 #define OCW_MASTER 0x20
 #define OCW_SLAVE 0xA0
 
-/* Used by OCW1 */
-#define ENABLE_INTERRUPT(org ,irq)		((org) |= (1 << (INT_IRQ##irq - INT_IRQ0)))
-#define DISABLE_INTERRUPT(org, irq)		((org) &= ~(1 << (INT_IRQ##irq - INT_IRQ0)))
-
 /* Used by OCW2 */
 #define EOI 0x20
 
-
-void set_interrupt_handler(byte n, ISR_HANDLER handler);
-void init_interrupts();
-
 #ifndef IDT_C
 extern INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
-extern IDTR idtr;
 #endif
+
+
+void init_interrupts();
 
 #endif

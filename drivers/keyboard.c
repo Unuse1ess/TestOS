@@ -1,11 +1,11 @@
-
+#include "../kernel/types.h"
+#include "../cpu/seg.h"
+#include "../kernel/task.h"
 #include "../drivers/ports.h"
-#include "../kernel/kernel.h"
 #include "screen.h"
 #include "keyboard.h"
-#include "../cpu/idt.h"
 #include "../cpu/isr.h"
-#include "../include/string.h"
+#include "../cpu/idt.h"
 #include "../include/function.h"
 
 
@@ -14,7 +14,6 @@
 
 #define SC_MAX 57
 
-static char key_buffer[256];
 
 static const char* sc_name[] =
 { "ERROR", "Esc", "1", "2", "3", "4", "5", "6",
@@ -48,13 +47,10 @@ void keyboard_callback(THREAD_CONTEXT* regs)
 	else if (scancode == ENTER)
 	{
 		kprint("\n");
-		user_input(key_buffer); /* kernel-controlled function */
-		key_buffer[0] = '\0';
 	}
 	else
 	{
 		kputchar(sc_ascii[(int)scancode]);
-		//	append(key_buffer, letter);
 	}
 }
 

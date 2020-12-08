@@ -10,8 +10,8 @@
  *
  *-------------------------------------------------------------*/
 
-#ifndef TYPE_H
-#define TYPE_H
+#ifndef TYPES_H
+#define TYPES_H
 
 /* From stdint.h */
 typedef signed char			int8;
@@ -23,10 +23,10 @@ typedef unsigned			uint32;
 typedef long long			int64;
 typedef unsigned long long	uint64;
 
-typedef uint8				byte;
-typedef uint16				word;
-typedef uint32				dword;
-typedef uint64				qword;
+typedef uint8				byte, BYTE, u8;
+typedef uint16				word, WORD, u16;
+typedef uint32				dword, DWORD, u32;
+typedef uint64				qword, QWORD, u64;
 
 
 /* From minwindef.h line 202~207 with some modifications. */
@@ -55,20 +55,7 @@ typedef int BOOL;
 #define CALLBACK
 
 
-typedef unsigned STATE;
-
 #define OK					0
 #define ERROR				((unsigned)-1)
-
-
-/* Console information */
-typedef struct
-{
-	byte clr_prop;						/* Color property of text */
-	byte is_scroll : 1;					/* 0 = clear screen, 1 = scroll screen, when text is full */
-	byte is_delete_line : 1;			/* 0 = delete only in line, 1 = delete all, when backspace is pressed */
-}VGA_CONSOLE_INFO;
-
-
 
 #endif

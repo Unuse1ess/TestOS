@@ -13,18 +13,14 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-#include "types.h"
+#ifndef TYPES_H
+#error "kernel/types.h" is not included
+#endif // !TYPES_H
 
-#ifndef INT_SYSCALL
-#define INT_SYSCALL 0x80
-#endif
-
-typedef int (*SYS_SRV_ROUTINE)(dword);
 
 void init_sys_call();
 
-extern void sys_call(THREAD_CONTEXT* regs);
+/* Implemented is print_screen.asm */
 extern int sys_print_screen(dword);
-
 
 #endif

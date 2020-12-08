@@ -12,7 +12,10 @@
 #ifndef SEG_H
 #define SEG_H
 
-#include "../kernel/types.h"
+#ifndef TYPES_H
+#error "kernel/types.h is not included"
+#endif
+
 
 /* Privilege level */
 /* Only use ring0 and ring3. */
@@ -172,7 +175,7 @@
 #pragma pack(push, 1)
 
 /* Structure of segment descriptor */
-typedef struct
+typedef struct _tagSEGMENT_DESCRIPTOR
 {
 	word seg_limit_low;
 
@@ -208,52 +211,12 @@ typedef struct
 }GDTR, IDTR;
 
 
-/* Structure of task-state segment */
-typedef struct
-{
-	dword prev_tss_sel;
-	/* High privilege stack */
-	dword esp0, ss0;
-	dword esp1, ss1;
-	dword esp2, ss2;
-	/* No need to have esp3 and ss3 */
-
-	dword cr3;
-	dword eip;
-	dword eflags;
-
-	/* General-purpose registers */
-	dword eax, ecx, edx, ebx, esp, ebp, esi, edi;
-
-	/* Segment register */
-	/* Higher word is 0. */
-	dword es, cs, ss, ds, fs, gs;
-
-	dword ldtr;
-
-	word trap_flag;
-	word io_bitmap_base;
-	word io_bitmap_end;
-} TASK_STATE_SEGMENT;
-
 /* Pop previous alignment out */
 #pragma pack(pop)
-
-#ifndef IDT_C
-extern INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
-extern IDTR idtr;
-#endif
 
 /* Functions implemented in idt.c */
 void set_idt_gate(int n, dword handler);
 void set_idt();
-
-
-#ifndef GDT_C
-extern SEGMENT_DESCRIPTOR gdt[NUM_OF_GDT_DESC];
-extern GATE_DESCRIPTOR* gate_desc_tbl;
-extern GDTR gdtr;
-#endif
 
 
 /* Implemented in gdt.c */

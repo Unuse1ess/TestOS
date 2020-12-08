@@ -11,7 +11,10 @@
 #ifndef APM_H
 #define APM_H
 
-#include "../kernel/types.h"
+#ifndef TYPES_H
+#error "kernel/types.h" is not included
+#endif
+
 
 #ifndef SIZE_OF_PAGE
 #define SIZE_OF_PAGE					1024

@@ -1,11 +1,17 @@
 #ifndef PORTS_H
 #define PORTS_H
 
-#include "../kernel/types.h"
+#ifndef TYPES_H
+#error "kernel/types.h" is not included
+#endif
 
+
+/* Implemented in ports.asm */
 byte port_byte_in(word port);
 void port_byte_out(word port, byte data);
 word port_word_in(word port);
 void port_word_out(word port, word data);
+dword port_dword_in(word port);
+void port_dword_out(word port, dword data);
 
 #endif

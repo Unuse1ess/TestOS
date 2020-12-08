@@ -8,8 +8,9 @@
  *
  *-------------------------------------------------------------*/
 
-#define ISR_C
-
+#include "../kernel/types.h"
+#include "../cpu/seg.h"
+#include "../kernel/task.h"
 #include "isr.h"
 #include "../drivers/screen.h"
 #include "../drivers/ports.h"
@@ -22,8 +23,15 @@
  *	5. Return.
  */
 
-ISR_HANDLER interrupt_handlers[256];
+static ISR_HANDLER interrupt_handlers[256];
 
+void set_interrupt_handler(byte n, ISR_HANDLER handler)
+{
+	interrupt_handlers[n] = handler;
+}
+
+
+/* Internel data and functions */
 
 /* To print the message which defines every exception */
 char* exception_messages[] =
@@ -49,20 +57,6 @@ char* exception_messages[] =
 	"Coprocessor Fault",
 	"Alignment Check",
 	"Machine Check",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved"
 };
 
 void isr_handler(THREAD_CONTEXT r)
@@ -83,6 +77,8 @@ void irq_handler(THREAD_CONTEXT r)
 {
 	if (interrupt_handlers[r.int_no] != 0)
 		(*interrupt_handlers[r.int_no])(&r);
+	else
+		kprintf("Interrupt request: %d\n", r.int_no - INT_IRQ0);
 
 	/* After every interrupt we need to send an EOI to the PICs
 	 * or they will not send another interrupt again.
@@ -91,4 +87,3 @@ void irq_handler(THREAD_CONTEXT r)
 		port_byte_out(0xA0, 0x20);	/* slave */
 	port_byte_out(0x20, 0x20);		/* master */
 }
-

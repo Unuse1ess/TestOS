@@ -32,24 +32,24 @@ kernel.bin: kernel.tmp
 # cpu/interrupt.o cpu/asm_gdt.o cpu/start_page.o
 # Temporary PE file of kernel code.
 kernel.tmp: boot/kernel_entry.o ${OBJ}
-	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 --section-start .PG_TBL=0x10000 --section-start .apm=0x6000 $^
+	ld -o $@ -Ttext 0x1000 -Tdata 0x3500 --section-start .PG_TBL=0x10000 --section-start .apm=0x6000 $^
 
 # Used for debugging purposes
 kernel.elf: boot/kernel_entry.o ${OBJ}
-	ld -o $@ -Ttext 0x1000 -Tdata 0x3000 --section-start .PG_TBL=0x10000 --section-start .apm=0x6000 $^ 
+	ld -o $@ -Ttext 0x1000 -Tdata 0x3500 --section-start .PG_TBL=0x10000 --section-start .apm=0x6000 $^ 
 
 run: os-image.bin
-	qemu-system-i386 -fda os-image.bin
+	qemu-system-i386 -hda os-image.bin
 
 # Open the connection to qemu and load our kernel-object file with symbols
 # -d guest_errors,int,cpu_reset
 debug: os-image.bin kernel.elf
-	qemu-system-i386 -s -fda os-image.bin -d guest_errors &
+	qemu-system-i386 -s -hda os-image.bin -d guest_errors &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 # Write the kernel to a floppy image used by bochs
 bochs: os-image.bin
-	dd if=$< of=D:/Code/OS/boot.img bs=1024 count=100 conv=notrunc
+	dd if=$< of=D:/Code/OS/test.img bs=1024 count=100 conv=notrunc
 	bochsdbg
 
 

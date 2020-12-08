@@ -11,23 +11,27 @@
 #define KERNEL_C
 
 #include "types.h"
-#include "kernel.h"
-#include "proc.h"
-#include "../drivers/screen.h"
 #include "../cpu/seg.h"
+#include "task.h"
+#include "kernel.h"
+#include "../drivers/screen.h"
 #include "../cpu/page.h"
+#include "../cpu/isr.h"
 #include "../cpu/idt.h"
 #include "../include/stdlib.h"
 #include "../drivers/apm.h"
 #include "../drivers/ports.h"
 #include "sys_call.h"
+#include "../drivers/hard_disk.h"
+
+
+#define KERNEL_STACK_BASE	0x90000
 
 
 /* Definition of OS information */
 word os_ver = MAKEWORD(MINOR_OS_VER, MAJOR_OS_VER);
 char os_name[] = OS_NAME;
 
-extern void irq_common_stub();
 
 void print_os_info()
 {
@@ -36,26 +40,12 @@ void print_os_info()
 	kprintf("Welcome to %s\n", os_name);
 }
 
-void user_input(char* input)
-{
-	//if (strcmp(input, "END") == 0)
-	//{
-	//	kprint("Stopping the CPU. Bye!\n");
-	//	//	shutdown();
-	//	asm volatile("hlt");
-	//}
-	//kprint("You said: ");
-	//kprint(input);
-	//kprint("\n> ");
-}
-
-extern dword tick;
-
 void test()
 {
 	void print_screen(char*);
 
 	print_screen("System call with one argument.\n");
+//	__asm("int $3");
 
 	while (1);
 }
@@ -72,17 +62,22 @@ void kernel_main()
 	init_interrupts();		/* Initialize IDT and IDTR, and enable interrupts */
 	init_sys_call();		/* Initialize system call */
 
-	clear_screen();
-	print_os_info();
+//	clear_screen();
+//	print_os_info();
+
+//	pio_hd_read_sector((void*)0x30000, 20, 0, 1, 0, 0);
 
 //	suspend();
 //	stand_by();
 //	reset();
 //	shutdown();
 
-	init_process((dword)test);
-	rdy_proc = &proc_table[0];
-	start_process(&proc_table[0]);
+	//void get_pci_cfg();
+	//get_pci_cfg();
+
+	init_task((dword)test);
+	rdy_task = &task_table[0];
+	start_task(rdy_task);
 
 	/* Infinite loop, waiting for interrupts. */
 	while (1);

@@ -43,7 +43,6 @@ static const char* err_msg[] =
 };
 
 
-
 void init_apm()
 {
 	/* Check the data filled by real-mode codes */

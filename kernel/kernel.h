@@ -8,28 +8,27 @@
  *
  *-------------------------------------------------------------*/
 
-#include "types.h"
-
 #ifndef KERNEL_H
 #define KERNEL_H
+
+#ifndef TYPES_H
+#error "kernel/types.h" is not included
+#endif
 
  /* OS version: 0.1 */
 #define MAJOR_OS_VER		0
 #define MINOR_OS_VER		1
 
 /* Name of OS */
-#define OS_NAME				"MYM-OS"
+#define OS_NAME				"TestOS"
 
-#define KERNEL_STACK_BASE	0x90000
 
 #ifndef KERNEL_C
 extern word os_ver;
-extern char os_name[];
+extern char os_name[sizeof(OS_NAME) / sizeof(char)];
 #endif
 
 /* Kernel function */
 void print_os_info();
-int kprintf(char* fmt, ...);
-void user_input(char*);
 
 #endif

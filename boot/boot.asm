@@ -29,16 +29,16 @@ SEC_NUM_TO_READ		equ		0x35
 
 	; ah = 0x02, read service
 	mov ah, 0x02
-	; al = 0x10, read 0x10 sectors from floppy
+	; Read SEC_NUM_TO_READ sectors from floppy
 	mov al, SEC_NUM_TO_READ
 
 	; cl = 0x02, start reading from #2 sector
 	; ch = 0x00, cylinder 0
 	mov cx, 0x0002
 
-	; dl = 0x00, read from #0 drive
-	; dh = 0x00, read from the boot floppy
-	mov dx, 0x0000
+	; dl = 0x00, read from #0 drive, bit 7 set for hard disk
+	; dh = 0x00, head #0
+	mov dx, 0x0080
 
 	; Use bios interrupt to help us read the floppy
 	; and load the kernel to memory.
@@ -60,7 +60,7 @@ SEC_NUM_TO_READ		equ		0x35
 
     lgdt [gdt_descriptor]		; Load the GDT descriptor
     mov eax, cr0
-    or eax, 0x1					; Set 32-bit mode bit in cr0
+    or eax, 1					; Set 32-bit mode bit in cr0
     mov cr0, eax
     jmp dword CODE_SEG:init_pm	; Far jump by using a different segment to clear CPU pipeline
 
@@ -75,7 +75,7 @@ setup_apm:
 	int 0x15
 	
 	push ax
-	mov ax, 0x600
+	mov ax, 0x600				; Address of APM data
 	mov es, ax
 	pop ax
 
@@ -115,7 +115,7 @@ init_pm:
 ; Definition and initialization of global descriptor table
 %include "boot/gdt.asm"
 
-; Fill the rest of space to 0
+; Fill rest of space to 0
 times 510-($-$$) db 0
 ; Magic number of boot sector
 dw 0xaa55

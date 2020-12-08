@@ -2,7 +2,7 @@
 ; a structure that contains the context of the execution flow,
 ; which has general-purposed registers, segment registers and
 ; interrupt number and error code, for convinience when handling
-; interrupts (see proc.h, line 48).
+; interrupts (see task.h).
 ; We also need a structure that contains information of a process,
 ; therefore we need a process table. So far we need LDTR, LDT, TR
 ; and TSS.
@@ -14,11 +14,11 @@
 ; Defined in gdt.c
 [extern _get_descriptor_base_addr]
 
-global _start_process
+global _start_task
 	
 ; Prototype: void start_process(PROCESS* proc);
 ; &proc: ebp + 8
-_start_process:
+_start_task:
 	push ebp
 	mov ebp, esp
 

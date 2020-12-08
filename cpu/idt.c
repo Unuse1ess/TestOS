@@ -12,17 +12,27 @@
 
 #include "../kernel/types.h"
 #include "seg.h"
+#include "../kernel/task.h"
 #include "isr.h"
 #include "idt.h"
 #include "../drivers/ports.h"
 #include "../drivers/keyboard.h"
-#include "timer.h"
+#include "../drivers/clock.h"
+#include "../drivers/hard_disk.h"
 #include "page.h"
 #include "../kernel/sys_call.h"
 
+
 INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
+
+/* Not exposed */
 IDTR idtr;
 
+extern void load_idtr();
+
+
+
+/* Install interrupt entries 0 ~ 47 */
 void init_idt()
 {
 	/* Install handler of CPU-reserved interrupts */
@@ -126,12 +136,8 @@ void set_idtr()
 	idtr.limit = sizeof(idt) - 1;
 
 	/* A thorn in my codes![doge] */
-	__asm volatile("lidtl (%0)" : : "r" (&idtr));
-}
-
-void set_interrupt_handler(byte n, ISR_HANDLER handler)
-{
-	interrupt_handlers[n] = handler;
+//	__asm volatile("lidtl (%0)" : : "r" (&idtr));
+	load_idtr();
 }
 
 void init_exceptions()
@@ -150,10 +156,12 @@ void init_interrupts()
 	set_idtr();
 
 	init_irq();
-	/* IRQ0: timer */
-	init_timer(50);
+	/* IRQ0: clock */
+	init_clock(50);
 	/* IRQ1: keyboard */
 	init_keyboard();
+	/* Init hard disk */
+	init_hd();
 
 	/* Enable interruptions */
 	__asm volatile("sti");

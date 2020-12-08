@@ -3,10 +3,10 @@
 [bits 32]
 
 ; Defined in task_switch.asm
-[extern _start_process]
+[extern _start_task]
 
-; Defined in proc.c
-[extern _rdy_proc]
+; Defined in task.c
+[extern _rdy_task]
 
 ; Defined in gdt.c
 [extern _get_descriptor_base_addr]
@@ -62,12 +62,12 @@ invoke_isr_handler:
 
 end_if:
 	mov ax, ss							; if(cur_ss != prev_ds)
-	cmp ax, [esp + DSREG]				;	start_process(rdy_proc);
+	cmp ax, [esp + DSREG]				;	start_process(rdy_task);
 	je no_change2
 
-	mov eax, [_rdy_proc]
+	mov eax, [_rdy_task]
 	push eax
-	call _start_process
+	call _start_task
 
 ; If interrupt happened in kernel mode,
 ; it is no need to restart process, at least so far.
@@ -140,6 +140,8 @@ global _irq13
 global _irq14
 global _irq15
 
+
+global _isr118
 ; System call
 global _isr128
 
@@ -456,6 +458,12 @@ _irq15:
 	cli
 	push byte 15
 	push byte 47
+	jmp _isr_common_stub
+
+_isr118:
+	cli
+	push 0
+	push 0x76
 	jmp _isr_common_stub
 
 ; System call

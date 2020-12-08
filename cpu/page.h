@@ -12,18 +12,15 @@
 #ifndef PAGE_H
 #define PAGE_H
 
-#include "../kernel/types.h"
+#ifndef TYPES_H
+#error "kernel/types.h" is not included
+#endif
 
-/* The OS use 0x000000~0x100000, using 0x100 pages.
- * These pages should be mapped as F(x) = x.
- */
-#define NUM_OF_KERNEL_PAGE			0x100
+#ifndef TASK_H
+#error "kernel/task.h" is not included
+#endif
 
-#define MAX_NUM_OF_PAGE_TABLE		0x400		/* Maximum 1024 page tables */
-#define MAX_SIZE_OF_PAGE_DIR_TABLE	0x1000		/* Page directory table's size is 4KB */
 
-#define NUM_OF_PAGE					0x400		/* 1024 pages in a page table */
-#define SIZE_OF_PAGE_TABLE			0x1000		/* Page table's size is 4KB */
 
 #define SIZE_OF_PAGE				0x1000		/* Size of a page is 4KB */
 
@@ -80,18 +77,13 @@ typedef struct
 	byte attribute;
 	byte global_page : 1;
 	byte allocated : 1;			/* AVL bits for OS, here we use it to indicated if it is allocated */
-	byte full : 2;				/* AVL bits for OS, here we use it to indicated if it is allocated */
+	byte avl : 2;				/* AVL bits for OS */
 	byte base_low : 4;
 	word base_high;
 }PAGE_ITEM, *PAGE_DIRECTORY_TABLE, *PAGE_TABLE;
 
 /* Pop previous alignment out */
 #pragma pack(pop)
-
-#ifndef MEMORY_C
-extern PAGE_ITEM page_dir_table[MAX_NUM_OF_PAGE_TABLE];
-extern PAGE_ITEM page_table[MAX_NUM_OF_PAGE_TABLE][NUM_OF_PAGE];
-#endif
 
 /* Implemented in page.asm */
 extern void start_paging();
@@ -102,7 +94,7 @@ void init_page();
 dword get_phys_addr(dword virt_addr);
 
 /* Call back function of ISR */
-void CALLBACK gp_handler();
-void CALLBACK pf_handler();
+void CALLBACK gp_handler(THREAD_CONTEXT* regs);
+void CALLBACK pf_handler(THREAD_CONTEXT* regs);
 
 #endif
