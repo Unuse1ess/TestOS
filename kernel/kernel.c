@@ -43,13 +43,20 @@ void print_os_info()
 void test()
 {
 	void print_screen(char*);
+	dword get_tick();
+	dword a;
 
-	print_screen("System call with one argument.\n");
 //	__asm("int $3");
 
-	while (1);
+	while (1)
+	{
+		a = get_tick();
+		if(a % 2 == 0)
+			print_screen("tick += 2;\n");
+	}
 }
 
+extern VBE_MODE_INFO vbe_mode_info;
 
 void kernel_main()
 {
@@ -64,13 +71,11 @@ void kernel_main()
 
 //	clear_screen();
 //	print_os_info();
+//	kprintf("Video memory: 0x%X\n", vbe_mode_info.phys_base);
 
-//	pio_hd_read_sector((void*)0x30000, 20, 0, 1, 0, 0);
+	pio_hd_read_sector((void*)0x30000, 16, 0, 2, 0, 0);
 
-//	suspend();
-//	stand_by();
-//	reset();
-//	shutdown();
+//	pio_hd_write_sector((void*)0x1000, 16, 0, 100, 0, 0);
 
 	//void get_pci_cfg();
 	//get_pci_cfg();

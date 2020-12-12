@@ -70,22 +70,22 @@ void init_idt()
 	set_idt_gate(31, (dword)isr31);
 
 	/* Install the IRQs */
-	set_idt_gate(INT_IRQ0, (dword)irq0);
-	set_idt_gate(INT_IRQ1, (dword)irq1);
-	set_idt_gate(INT_IRQ2, (dword)irq2);
-	set_idt_gate(INT_IRQ3, (dword)irq3);
-	set_idt_gate(INT_IRQ4, (dword)irq4);
-	set_idt_gate(INT_IRQ5, (dword)irq5);
-	set_idt_gate(INT_IRQ6, (dword)irq6);
-	set_idt_gate(INT_IRQ7, (dword)irq7);
-	set_idt_gate(INT_IRQ8, (dword)irq8);
-	set_idt_gate(INT_IRQ9, (dword)irq9);
-	set_idt_gate(INT_IRQ10, (dword)irq10);
-	set_idt_gate(INT_IRQ11, (dword)irq11);
-	set_idt_gate(INT_IRQ12, (dword)irq12);
-	set_idt_gate(INT_IRQ13, (dword)irq13);
-	set_idt_gate(INT_IRQ14, (dword)irq14);
-	set_idt_gate(INT_IRQ15, (dword)irq15);
+	set_idt_gate(IRQ0, (dword)irq0);
+	set_idt_gate(IRQ1, (dword)irq1);
+	set_idt_gate(IRQ2, (dword)irq2);
+	set_idt_gate(IRQ3, (dword)irq3);
+	set_idt_gate(IRQ4, (dword)irq4);
+	set_idt_gate(IRQ5, (dword)irq5);
+	set_idt_gate(IRQ6, (dword)irq6);
+	set_idt_gate(IRQ7, (dword)irq7);
+	set_idt_gate(IRQ8, (dword)irq8);
+	set_idt_gate(IRQ9, (dword)irq9);
+	set_idt_gate(IRQ10, (dword)irq10);
+	set_idt_gate(IRQ11, (dword)irq11);
+	set_idt_gate(IRQ12, (dword)irq12);
+	set_idt_gate(IRQ13, (dword)irq13);
+	set_idt_gate(IRQ14, (dword)irq14);
+	set_idt_gate(IRQ15, (dword)irq15);
 }
 
 void init_irq()
@@ -94,7 +94,7 @@ void init_irq()
 	/* Write ICW1 */
 	/* Needs ICW4 and edge triggered mode */
 	port_byte_out(ICW1_MASTER, 0x11);
-	port_byte_out(ICW1_MASTER, 0x11);
+	port_byte_out(ICW1_SLAVE, 0x11);
 
 	/* Write ICW2 */
 	/* In this step, IRQ0~IRQ7 is mapped to interrupt 0x20~0x27. */
@@ -111,11 +111,11 @@ void init_irq()
 	/* 80x86 mode and normal EOI */
 	port_byte_out(ICW4_MASTER, 0x01);
 	port_byte_out(ICW4_SLAVE, 0x01);
-
+	
 	/* Write OCW1 */
-	/* Enable all interrupts from 8259A */
-	port_byte_out(0x21, 0x0);
-	port_byte_out(0xA1, 0x0);
+	/* Disable all interrupts from 8259A, except slave 8259A. */
+	port_byte_out(0x21, 0xFB);
+	port_byte_out(0xA1, 0xFF);
 }
 
 void set_idt_gate(int n, dword handler)
@@ -134,9 +134,6 @@ void set_idtr()
 {
 	idtr.base = (dword)&idt;
 	idtr.limit = sizeof(idt) - 1;
-
-	/* A thorn in my codes![doge] */
-//	__asm volatile("lidtl (%0)" : : "r" (&idtr));
 	load_idtr();
 }
 

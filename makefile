@@ -14,6 +14,13 @@ ASM_OBJ = ${ASM_SOURCES:.asm=.o}
 # All the object files
 OBJ = ${C_OBJ} ${ASM_OBJ}
 
+# Address of section
+SECTION_ADDR = -Ttext 0x1000 -Tdata 0x3500 \
+				--section-start .PG_TBL=0x10000 \
+				--section-start .apm=0x6000 \
+				--section-start .video=0x6100 \
+				--section-start .mem=0x6200
+
 # compilor and debugger
 CC = gcc
 GDB = gdb
@@ -32,25 +39,28 @@ kernel.bin: kernel.tmp
 # cpu/interrupt.o cpu/asm_gdt.o cpu/start_page.o
 # Temporary PE file of kernel code.
 kernel.tmp: boot/kernel_entry.o ${OBJ}
-	ld -o $@ -Ttext 0x1000 -Tdata 0x3500 --section-start .PG_TBL=0x10000 --section-start .apm=0x6000 $^
+	ld -o $@ ${SECTION_ADDR} $^
 
 # Used for debugging purposes
 kernel.elf: boot/kernel_entry.o ${OBJ}
-	ld -o $@ -Ttext 0x1000 -Tdata 0x3500 --section-start .PG_TBL=0x10000 --section-start .apm=0x6000 $^ 
+	ld -o $@ ${SECTION_ADDR} $^ 
 
-run: os-image.bin
-	qemu-system-i386 -hda os-image.bin
+run:
+	qemu-system-i386 -drive file=../test.img,format=raw,index=0,media=disk
+	
+bdb:
+	bochsdbg
 
 # Open the connection to qemu and load our kernel-object file with symbols
 # -d guest_errors,int,cpu_reset
-debug: os-image.bin kernel.elf
-	qemu-system-i386 -s -hda os-image.bin -d guest_errors &
+qdb: kernel.elf
+	qemu-system-i386 -drive file=../test.img,format=raw,index=0,media=disk -d guest_errors -s &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
-# Write the kernel to a floppy image used by bochs
-bochs: os-image.bin
+	
+# Write the kernel to a hard disk image
+disk: os-image.bin kernel.elf
 	dd if=$< of=D:/Code/OS/test.img bs=1024 count=100 conv=notrunc
-	bochsdbg
 
 
 # To make an object, always compile from its .c

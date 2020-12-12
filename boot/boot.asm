@@ -1,10 +1,7 @@
 ;-----------------------------------------------------------------------------
-;							Time: 2020/11/12
-;							Author: MYM
-;-----------------------------------------------------------------------------
-; History:
+;									History
 ;	Version 0.1:
-;		2020/11/12 created by MYM. Create the boot program for the OS.
+;		2020/11/12 Created by MYM. Create the boot program for the OS.
 ;-----------------------------------------------------------------------------
 
 
@@ -15,6 +12,16 @@ KERNEL_ADDR			equ		0x1000
 ; With the size of the kernel growth,
 ; the number of the sectors to read should grow either.
 SEC_NUM_TO_READ		equ		0x35
+
+; es of buffer used to receive the information from BIOS interrupts.
+BIOS_DATA_BUFFER	equ		0x600
+
+; 600H:0 stores APM data
+APM_DATA_OFFSET		equ		0
+; 600H:100H stores VBE data
+VBE_DATA_OFFSET		equ		0x100
+; stores memory data
+MEM_BLOCK_INFO_OFFSET equ	0x200
 
 ; Tell the assembler where the program is.
 [org 0x7c00]
@@ -50,6 +57,8 @@ SEC_NUM_TO_READ		equ		0x35
 ;	jne disk_err
 
 	call setup_apm
+	call setup_video_mode
+	call get_mem_info
 
 	; 2. Switch to 32-bit protected mode.
 
@@ -69,16 +78,17 @@ disk_err:
 	jmp $
 
 setup_apm:
-	; Setup APM
+	; Use BIOS interrupt
 	mov ax, 0x5303
 	xor bx, bx
 	int 0x15
 	
 	push ax
-	mov ax, 0x600				; Address of APM data
+	mov ax, BIOS_DATA_BUFFER
 	mov es, ax
 	pop ax
 
+	; Store the APM data by filling them into a structure
 	movzx eax, ax
 	mov es:[0], eax
 	mov es:[4], ebx
@@ -93,7 +103,60 @@ setup_apm:
 apm_no_err:
 	ret
 
+setup_video_mode:
+	; Use BIOS interrupt
 
+	mov ax, BIOS_DATA_BUFFER
+	mov es, ax
+	mov di, VBE_DATA_OFFSET
+
+	mov ax, 0x4f00
+	int 0x10
+
+	cmp ax, 0x4f			; Succeeded if ax == 0x004f
+	jne vid_err
+
+	add di, 0x20			; Get the address of vbe_mode_info in kernel
+	mov ax, 0x4f01
+	mov cx, 0x109
+	int 0x10
+
+	cmp ax, 0x4f
+	jne vid_err
+
+	jmp vid_err
+	mov ax, 0x4f02
+	mov bx, 0x109
+	int 0x10
+	
+vid_err:
+
+	ret
+
+get_mem_info:
+	mov ax, BIOS_DATA_BUFFER
+	mov es, ax
+	mov di, MEM_BLOCK_INFO_OFFSET
+	xor ebx, ebx
+
+not_finished:
+	mov eax, 0x0000e820
+	mov ecx, 20
+	mov edx, 0x534D4150				; 'SMAP'
+	
+	int 0x15
+
+	jc mem_check_err
+	add di, 20
+	test ebx, ebx
+	jnz not_finished
+
+mem_check_err:
+
+	ret
+	
+
+; 32-bit protect mode codes
 [bits 32]
 
 init_pm:

@@ -3,17 +3,19 @@
 #include "task.h"
 #include "../cpu/isr.h"
 #include "../cpu/idt.h"
+#include "../drivers/clock.h"
 #include "../drivers/screen.h"
 #include "sys_call.h"
 
 
-typedef int (*SYS_SRV_ROUTINE)(dword);
+typedef dword (*SYS_SRV_ROUTINE)(dword);
 
 
 /* System service table */
 SYS_SRV_ROUTINE sys_srv_tbl[] =
 {
-	sys_print_screen,
+	(SYS_SRV_ROUTINE)sys_print_screen,
+	(SYS_SRV_ROUTINE)sys_get_tick,
 	NULL,
 };
 

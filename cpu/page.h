@@ -1,10 +1,6 @@
 /*--------------------------------------------------------------
- *						Time: 2020/11/19
- *						Author: MYM
- *--------------------------------------------------------------
- * History:
- *	Version 0.1:
- *		2020/11/19 created by MYM. This header file defines
+ *							History
+ *	Version 0.1: 2020/11/19 Created by MYM. This header file defines
  * basic things of memory page of protection mode.
  *
  *-------------------------------------------------------------*/
@@ -19,7 +15,6 @@
 #ifndef TASK_H
 #error "kernel/task.h" is not included
 #endif
-
 
 
 #define SIZE_OF_PAGE				0x1000		/* Size of a page is 4KB */

@@ -21,6 +21,6 @@
 void init_sys_call();
 
 /* Implemented is print_screen.asm */
-extern int sys_print_screen(dword);
+extern void sys_print_screen(char*);
 
 #endif

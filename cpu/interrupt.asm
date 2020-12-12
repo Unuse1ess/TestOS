@@ -18,7 +18,7 @@
 ; Common ISR codes
 _isr_common_stub:
 	; Save context
-    pusha
+    pushad
 	push ds
 	push es
 	push fs
@@ -62,7 +62,7 @@ invoke_isr_handler:
 
 end_if:
 	mov ax, ss							; if(cur_ss != prev_ds)
-	cmp ax, [esp + DSREG]				;	start_process(rdy_task);
+	cmp ax, [esp + DSREG]				;	start_task(rdy_task);
 	je no_change2
 
 	mov eax, [_rdy_task]
@@ -77,6 +77,7 @@ no_change2:
 	pop es
 	pop ds
     popad
+
     add esp, 8
 
     sti

@@ -10,24 +10,31 @@
 #define PIO_BASE_ADDR1 0x1f0
 #define PIO_BASE_ADDR2 0x3f0
 
+#define HD_READ_COMMAND 0x20
+#define HD_WRITE_COMMAND 0x30
 
-void hd_request(THREAD_CONTEXT* regs)
-{
-	kprint("int 0x76\n");
-}
+#define SIZE_OF_SECTOR	0x200
+
+static void hd_request(THREAD_CONTEXT* regs);
+
+static BOOL ready;
+
 
 void init_hd()
 {
-	set_idt_gate(0x76, (dword)isr118);
-	set_interrupt_handler(0x76, hd_request);
+	ready = FALSE;
+
+	set_interrupt_handler(IRQ14, hd_request);
+
+	/* Enable hard disk interrupt (IRQ14) */
+	port_byte_out(0xA1, port_byte_in(0xA1) & ~0x40);
 }
 
+/* Only lower 4 bits of number of head is valid */
 void pio_hd_read_sector(void* buffer, byte count, byte drive, byte sector, word cylinder, byte head)
 {
 	int i;
-	unsigned cnt;
 	byte state;
-	dword* tmp = (dword*)buffer;
 
 	if (count == 0)
 		return;
@@ -49,28 +56,25 @@ void pio_hd_read_sector(void* buffer, byte count, byte drive, byte sector, word 
 	port_word_out(PIO_BASE_ADDR1 + 4, cylinder);
 	port_byte_out(PIO_BASE_ADDR1 + 6, ((drive & 1) << 5) | (head & 0xf));
 	/* Read */
-	port_byte_out(PIO_BASE_ADDR1 + 7, 0x20);
+	port_byte_out(PIO_BASE_ADDR1 + 7, HD_READ_COMMAND);
 
-	do
+	for (i = 0; i < count; i++)
 	{
-		state = port_byte_in(PIO_BASE_ADDR1 + 7);
-	} while (state != 0x58);
+		do
+		{
+		//	state = port_byte_in(PIO_BASE_ADDR1 + 7);
+		} while (ready == FALSE);
 
-	__asm("cli");
-
-	/* Transfer the data in double words each time */
-	cnt = count * 128;
-	for (i = 0; i < cnt; i++)
-		*tmp++ = port_dword_in(PIO_BASE_ADDR1);
-
-	__asm("sti");
+		port_buffer_in(PIO_BASE_ADDR1, buffer, SIZE_OF_SECTOR);
+		buffer = (void*)((dword)buffer + SIZE_OF_SECTOR);
+		ready = FALSE;
+	}
 }
 
 void pio_hd_write_sector(void* buffer, byte count, byte drive, byte sector, word cylinder, byte head)
 {
-	int i, j;
+	int i;
 	byte state;
-	dword* tmp = (dword*)buffer;
 
 	/* Reset hard disk */
 	port_byte_out(PIO_BASE_ADDR2 + 6, 4);
@@ -80,7 +84,7 @@ void pio_hd_write_sector(void* buffer, byte count, byte drive, byte sector, word
 	do
 	{
 		state = port_byte_in(PIO_BASE_ADDR1 + 7);
-	}while (state & 0x88 != 0x88);
+	}while ((state & 0x80) || (state & 0x08));
 
 	/* Set read command */
 	port_byte_out(PIO_BASE_ADDR1 + 1, 0);
@@ -89,21 +93,30 @@ void pio_hd_write_sector(void* buffer, byte count, byte drive, byte sector, word
 	port_word_out(PIO_BASE_ADDR1 + 4, cylinder);
 	port_byte_out(PIO_BASE_ADDR1 + 6, ((drive & 1) << 5) | (head & 0xf));
 	/* Write */
-	port_byte_out(PIO_BASE_ADDR1 + 7, 0x30);
-
-	__asm("cli");
+	port_byte_out(PIO_BASE_ADDR1 + 7, HD_WRITE_COMMAND);
 
 	/* Transfer the data in double words each time */
 	for (i = 0; i < count; i++)
 	{
-		for (j = 0; j < 128; j++, tmp++)
-			port_dword_out(PIO_BASE_ADDR1, *tmp);
+		port_buffer_out(PIO_BASE_ADDR1, buffer, SIZE_OF_SECTOR);
+		buffer = (void*)((dword)buffer + SIZE_OF_SECTOR);
+		ready = FALSE;
 
-		/* Check whether there is an error */
-		state = port_byte_in(PIO_BASE_ADDR1 + 7);
-		if (state & 1)
-			break;
+		/* Wait for hard disk finished the write operation */
+		do
+		{
+			/* Clear interrupt signal */
+		//	state = port_byte_in(PIO_BASE_ADDR1 + 7);
+		} while (ready == FALSE);
 	}
+}
 
-	__asm("sti");
+/* Internel function */
+
+static void hd_request(THREAD_CONTEXT* regs)
+{
+	byte state = port_byte_in(PIO_BASE_ADDR1 + 7);
+
+	kprint("IRQ14\n");
+	ready = TRUE;
 }

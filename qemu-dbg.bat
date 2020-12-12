@@ -1,0 +1,1 @@
+start /min qemu-system-i386 -drive file=../test.img,format=raw,index=0,media=disk -boot a -d guest_errors -s&start gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"

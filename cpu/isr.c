@@ -78,7 +78,7 @@ void irq_handler(THREAD_CONTEXT r)
 	if (interrupt_handlers[r.int_no] != 0)
 		(*interrupt_handlers[r.int_no])(&r);
 	else
-		kprintf("Interrupt request: %d\n", r.int_no - INT_IRQ0);
+		kprintf("Interrupt request: %d\n", r.int_no - IRQ0);
 
 	/* After every interrupt we need to send an EOI to the PICs
 	 * or they will not send another interrupt again.

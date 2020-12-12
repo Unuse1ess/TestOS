@@ -1,8 +1,5 @@
 /*--------------------------------------------------------------
- *						Time: 2020/11/19
- *						Author: MYM
- *--------------------------------------------------------------
- * History:
+ *							History
  *	Version 0.1:
  *		2020/11/19 created by MYM.
  *
@@ -32,6 +29,22 @@
 #define SIZE_OF_PAGE_TABLE			0x1000		/* Page table's size is 4KB */
 
 
+#define ADDR_RANGE_AVAILABLE		1			/* 1 indicates this memory range is available for OS,
+													and other values indicate reserved.*/
+
+#pragma pack(push, 1)
+
+/* Strucutre of memory information */
+typedef struct
+{
+	qword base_addr;
+	qword length;
+	dword type;
+}MEMORY_BLOCK_INFO;
+
+#pragma pack(pop)
+
+
   /* Page table is defined at .PG_TBL section,
    * which is at 0x10000.
    */
@@ -39,6 +52,11 @@ __attribute__((section(".PG_TBL")))
 PAGE_ITEM page_dir_table[MAX_NUM_OF_PAGE_TABLE];
 __attribute__((section(".PG_TBL")))
 PAGE_ITEM page_table[MAX_NUM_OF_PAGE_TABLE][NUM_OF_PAGE];
+
+/* Memory information is stored at 0x6200 */
+__attribute__((section(".mem")))
+MEMORY_BLOCK_INFO mem_block_info[20];		/* Temporarily support 20 memory block info */
+
 
 struct __dummy
 {};

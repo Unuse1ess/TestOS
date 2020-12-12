@@ -14,4 +14,8 @@ void port_word_out(word port, word data);
 dword port_dword_in(word port);
 void port_dword_out(word port, dword data);
 
+/* size must be a multiple of 4 */
+void* port_buffer_in(word port, void* buffer, unsigned size);
+void port_buffer_out(word port, void* buffer, unsigned size);
+
 #endif

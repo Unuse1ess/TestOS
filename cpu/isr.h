@@ -110,22 +110,22 @@ extern void isr128();
 #define INT_SYSCALL				0x80
 
 /* Map IRQs to corresponding interrupt number */
-#define INT_IRQ0 32
-#define INT_IRQ1 33
-#define INT_IRQ2 34
-#define INT_IRQ3 35
-#define INT_IRQ4 36
-#define INT_IRQ5 37
-#define INT_IRQ6 38
-#define INT_IRQ7 39
-#define INT_IRQ8 40
-#define INT_IRQ9 41
-#define INT_IRQ10 42
-#define INT_IRQ11 43
-#define INT_IRQ12 44
-#define INT_IRQ13 45
-#define INT_IRQ14 46
-#define INT_IRQ15 47
+#define IRQ0 32
+#define IRQ1 33
+#define IRQ2 34
+#define IRQ3 35
+#define IRQ4 36
+#define IRQ5 37
+#define IRQ6 38
+#define IRQ7 39
+#define IRQ8 40
+#define IRQ9 41
+#define IRQ10 42
+#define IRQ11 43
+#define IRQ12 44
+#define IRQ13 45
+#define IRQ14 46
+#define IRQ15 47
 
 typedef void (CALLBACK *ISR_HANDLER)(THREAD_CONTEXT*);
 

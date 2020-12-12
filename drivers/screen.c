@@ -1,11 +1,11 @@
-/*--------------------------------------------------------------
- *						Time: 2020/11/13
- *						Author: MYM
- *--------------------------------------------------------------
- * History:
- *	Version 0.1:
- *		2020/11/13 created by MYM. Create the driver of screen.
- *
+/*
+ *							History
+ * Version 0.1 2020/11/13:
+ *	Created by MYM <unuse1ess@qq.com>.
+ *	Create the display interface.
+ * Version 0.2 2020/12/10:
+ *	Modified by MYM <unuse1ess@qq.com>.
+ *	
  *-------------------------------------------------------------*/
 
 #include "../kernel/types.h"
@@ -16,9 +16,17 @@
 #include "../include/stdarg.h"
 #include "../kernel/utility.h"
 
- /* Notice that a character on the screen has its
-  * corresponding word-size cell in video memory.
-  */
+
+/* VBE data, located at 0x6100 */
+__attribute__((section(".video")))
+VBE_INFO vbe_info;
+__attribute__((section(".video")))
+VBE_MODE_INFO vbe_mode_info;
+
+struct _dummy
+{};
+
+
 typedef byte* video_memory;
 
 #define VIDEO_ADDRESS ((video_memory)0xb8000)
@@ -47,6 +55,12 @@ typedef byte* video_memory;
 
 #define WHITE_ON_BLACK TEXT_COLOR(1, 1, 1)
 #define DEFAULT_BG	MAKEWORD(0, WHITE_ON_BLACK)
+
+
+void init_screen()
+{
+
+}
 
 
  /* Use the VGA ports to get the current cursor position

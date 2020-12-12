@@ -56,5 +56,8 @@ void keyboard_callback(THREAD_CONTEXT* regs)
 
 void init_keyboard()
 {
-	set_interrupt_handler(INT_IRQ1, keyboard_callback);
+	set_interrupt_handler(IRQ1, keyboard_callback);
+
+	/* Enable keyboard interrupt (IRQ1, at master chip) */
+	port_byte_out(0x21, port_byte_in(0x21) & ~2);
 }

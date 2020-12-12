@@ -16,7 +16,7 @@
 
 global _start_task
 	
-; Prototype: void start_process(PROCESS* proc);
+; Prototype: void start_task(PROCESS* proc);
 ; &proc: ebp + 8
 _start_task:
 	push ebp

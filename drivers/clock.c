@@ -12,7 +12,7 @@
 
 
 /* Private variables */
-static dword tick = 0;
+static dword tick = 50;
 
 static void clock_callback(THREAD_CONTEXT*);
 
@@ -24,12 +24,15 @@ void init_clock(dword freq)
 	byte high = (byte)((divisor >> 8) & 0xFF);
 
 	/* Install the function we just wrote */
-	set_interrupt_handler(INT_IRQ0, clock_callback);
+	set_interrupt_handler(IRQ0, clock_callback);
 
 	/* Send the command */
 	port_byte_out(0x43, 0x36); /* Command port */
 	port_byte_out(0x40, low);
 	port_byte_out(0x40, high);
+
+	/* Enable clock interrupt (IRQ0, at master chip) */
+	port_byte_out(0x21, port_byte_in(0x21) & ~1);
 }
 
 dword sys_get_tick()
@@ -43,5 +46,7 @@ dword sys_get_tick()
 static void clock_callback(THREAD_CONTEXT* regs)
 {
 	tick++;
+	if (tick % 50 == 0)
+		kprintf("%d\n", tick);
 	UNUSED(regs);
 }
