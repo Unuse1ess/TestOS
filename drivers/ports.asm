@@ -1,4 +1,9 @@
-
+;---------------------------------------------------------
+;						History
+;	Version 0.1:
+;		2020/11/13 Created by MYM.
+;		2020/12/10 Supported I/O by dword and by a memory block.
+;---------------------------------------------------------
 
 global _port_byte_in
 global _port_byte_out

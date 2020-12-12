@@ -1,3 +1,5 @@
+# This is makefile of TestOS.
+
 # $@ = target file
 # $< = first dependency
 # $^ = all dependencies

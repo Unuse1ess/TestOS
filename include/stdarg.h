@@ -1,13 +1,8 @@
 /*--------------------------------------------------------------
- *						Time: 2020/11/14
- *						Author: MYM
- *--------------------------------------------------------------
- * History:
+ *							History
  *	Version 0.1:
- *		2020/11/13 created by MYM. This header file is a standard
- * C header file. It provides macros for variable argument list.
+ *		2020/11/14 Created by MYM.
  * 
- * This file is tested and temporarily has no bug.
  *-------------------------------------------------------------*/
 
 #ifndef STDARG_H

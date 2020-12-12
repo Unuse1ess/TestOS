@@ -1,11 +1,7 @@
 /*--------------------------------------------------------------
- *						Time: 2020/11/13
- *						Author: MYM
- *--------------------------------------------------------------
- * History:
+ *							History
  *	Version 0.1:
- *		2020/11/15 created by MYM. This header file defines
- * basic things of segmentation of protection mode.
+ *		2020/11/15 Created by MYM.
  * 
  *-------------------------------------------------------------*/
 

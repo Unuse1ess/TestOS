@@ -1,11 +1,8 @@
 /*--------------------------------------------------------------
- *						Time: 2020/11/13
- *						Author: MYM
- *--------------------------------------------------------------
- * History:
+ *							History
  *	Version 0.1:
- *		2020/11/13 created by MYM. Added basic things about screen.
- *
+ *		2020/11/13 Created by MYM.
+ *		2020/12/10 Added structure of graphic mode information.
  *-------------------------------------------------------------*/
 
 #ifndef SCREEN_H

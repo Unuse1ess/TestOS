@@ -1,8 +1,7 @@
 /*--------------------------------------------------------------
  *							History
- *	Version 0.1: 2020/11/19 Created by MYM. This header file defines
- * basic things of memory page of protection mode.
- *
+ *	Version 0.1:
+ *		2020/11/19 Created by MYM.
  *-------------------------------------------------------------*/
 
 #ifndef PAGE_H

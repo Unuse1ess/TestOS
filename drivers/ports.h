@@ -1,3 +1,11 @@
+/*--------------------------------------------------------------
+ *							History
+ *	Version 0.1:
+ *		2020/11/13 Created by MYM.
+ *		2020/12/10 Added new interface, supporting dword-size
+ *				   and transferring a memory block.
+ *-------------------------------------------------------------*/
+
 #ifndef PORTS_H
 #define PORTS_H
 

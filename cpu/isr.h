@@ -1,16 +1,15 @@
-/*--------------------------------------------------------------
- *						Time: 2020/11/13
- *						Author: MYM
- *--------------------------------------------------------------
- * History:
+/*-------------------------------------------------------------
+ *							History
  *	Version 0.1:
- *		2020/11/15 created by MYM. This header file defines
- * ISR, which is interrupt service routine, or so called
- * interrupt handler, and also defines IRQ, which is interrupt
- * request. In this OS, IRQ0 ~ IRQ15 are mapped to interrupt
- * 0x20 ~ 0x2f. There is also macros for 8259A.
- * 
- *-------------------------------------------------------------*/
+ *		2020/11/15 Created by MYM. 
+ *-------------------------------------------------------------
+ *						  Description
+ * This header file defines ISR, which is interrupt service
+ * routine, or so called interrupt handler, and also defines
+ * IRQ, which is interrupt request. In this OS, IRQ0 ~ IRQ15
+ * are mapped to interrupt 0x20 ~ 0x2f.
+ * There is also macros for 8259A.
+ *------------------------------------------------------------*/
 #ifndef ISR_H
 #define ISR_H
 

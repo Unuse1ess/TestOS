@@ -1,3 +1,5 @@
+; Temporary GDT for entering protected-mode
+
 gdt_start: ; don't remove the labels, they're needed to compute sizes and jumps
     ; the GDT starts with a null 8-byte
     dd 0x0 ; 4 byte
@@ -14,7 +16,7 @@ gdt_code:
     db 0x0       ; segment base, bits 24-31
 
 ; GDT for data segment. base and length identical to code segment
-; some flags changed, again, refer to os-dev.pdf
+; some flags changed, again, refer to 'Assembly Language and Microcomputer Interface'
 gdt_data:
     dw 0xffff
     dw 0x0

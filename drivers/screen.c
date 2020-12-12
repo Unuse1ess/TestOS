@@ -1,11 +1,8 @@
 /*
  *							History
- * Version 0.1 2020/11/13:
- *	Created by MYM <unuse1ess@qq.com>.
- *	Create the display interface.
- * Version 0.2 2020/12/10:
- *	Modified by MYM <unuse1ess@qq.com>.
- *	
+ * Version 0.1
+ *	2020/11/13 Created by MYM.
+ *	2020/12/10 Supported graphic mode.
  *-------------------------------------------------------------*/
 
 #include "../kernel/types.h"
