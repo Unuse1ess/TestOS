@@ -30,6 +30,7 @@
  *	OCW: Operation Command Word
  */
 
+/* Implemented in interrupt.asm */
 /* Interrupt 0x00 ~ 0x1F are definded by CPU, in protect mode */
 /* Defined and implemented in interrupt.asm */
 extern void isr0();
@@ -83,11 +84,9 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
-/* Called when hard disk is ready */
-extern void isr118();
-
 /* System call*/
 extern void isr128();
+
 
 #define INT_DIVERR				0
 #define INT_STEP_DEBUG			1

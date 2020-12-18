@@ -8,9 +8,8 @@
 ; Externel code from C
 [extern _kernel_main]
 
-; The address here should be 0x1000, therefore the link option
-; should contain -Ttext 0x1000.
+; The address here should be 0x7E00, therefore the link option
+; should contain -Ttext 0x7E00.
 
 ; Give the control to kernel
-call _kernel_main
-jmp $
+jmp _kernel_main

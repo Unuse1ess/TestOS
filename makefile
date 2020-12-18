@@ -19,9 +19,9 @@ OBJ = ${C_OBJ} ${ASM_OBJ}
 # Address of section
 SECTION_ADDR = -Ttext 0x1000 -Tdata 0x3500 \
 				--section-start .PG_TBL=0x10000 \
-				--section-start .apm=0x6000 \
-				--section-start .video=0x6100 \
-				--section-start .mem=0x6200
+				--section-start .apm=0x500 \
+				--section-start .mem=0x600 \
+				--section-start .video=0x800
 
 # compilor and debugger
 CC = gcc
@@ -62,7 +62,7 @@ qdb: kernel.elf
 	
 # Write the kernel to a hard disk image
 disk: os-image.bin kernel.elf
-	dd if=$< of=D:/Code/OS/test.img bs=1024 count=100 conv=notrunc
+	dd if=$< of=D:/Code/OS/test.img bs=512 count=200 conv=notrunc
 
 
 # To make an object, always compile from its .c

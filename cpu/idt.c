@@ -14,7 +14,7 @@
 #include "idt.h"
 #include "../drivers/ports.h"
 #include "../drivers/keyboard.h"
-#include "../drivers/clock.h"
+#include "../drivers/timer.h"
 #include "../drivers/hard_disk.h"
 #include "page.h"
 #include "../kernel/sys_call.h"
@@ -143,19 +143,13 @@ void init_exceptions()
 void init_interrupts()
 {
 	init_idt();
-	/* Initialize CPU exceptions' handlers */
-	init_exceptions();
-
-	/* Load with ASM */
-	set_idtr();
+	init_exceptions();		/* Initialize CPU exceptions' handlers */
+	set_idtr();				/* Load idtr */
 
 	init_irq();
-	/* IRQ0: clock */
-	init_clock(50);
-	/* IRQ1: keyboard */
-	init_keyboard();
-	/* Init hard disk */
-	init_hd();
+	init_clock(50);			/* IRQ0: clock */
+	init_keyboard();		/* IRQ1: keyboard */
+	init_hd();				/* Init hard disk */
 
 	/* Enable interruptions */
 	__asm volatile("sti");

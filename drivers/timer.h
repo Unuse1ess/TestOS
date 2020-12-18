@@ -5,8 +5,8 @@
  *
  *-------------------------------------------------------------*/
 
-#ifndef CLOCK_H
-#define CLOCK_H
+#ifndef TIMER_H
+#define TIMER_H
 
 #ifndef TYPES_H
 #error "kernel/types.h" is not included

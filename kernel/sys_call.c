@@ -10,7 +10,7 @@
 #include "task.h"
 #include "../cpu/isr.h"
 #include "../cpu/idt.h"
-#include "../drivers/clock.h"
+#include "../drivers/timer.h"
 #include "../drivers/screen.h"
 #include "sys_call.h"
 

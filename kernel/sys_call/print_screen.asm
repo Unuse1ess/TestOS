@@ -10,8 +10,7 @@ _print_screen:
 	int 0x80
 	ret
 
-; Prototype: void sys_print_screen(dword user_esp);
-; &user_esp: esp + 4
+; Prototype: void sys_print_screen(char** arg);
 _sys_print_screen:
 	mov eax, [esp + 4]
 	mov eax, [eax]

@@ -16,6 +16,46 @@
 #include "../include/stdlib.h"
 #include "../include/function.h"
 
+/*					Physical memory distribution
+ *		+-------------------------------------------------+
+ *		|	0x0 ~ 0x4FF				IVT & BIOS data		  |
+ *		+-------------------------------------------------+
+ *		|	0x500 ~ 0x5FF			APM data			  |
+ *		+-------------------------------------------------+
+ *		|	0x600 ~ 0x7FF			Memory block data	  |	
+ *		+-------------------------------------------------+
+ *		|	0x800 ~ 0x8FF			?VBE data			  |
+ *		+-------------------------------------------------+
+ *		|	0x900 ~ 0xFFF			Free memory			  |
+ *		+-------------------------------------------------+
+ *		|	0x1000 ~ 0x7BFF			Kernel code & data	  |
+ *		+-------------------------------------------------+
+ *		|	0x7C00 ~ 0x7DFF			Boot sector			  |
+ *		+-------------------------------------------------+
+ *		|	0x7E00 ~ 0x7FFF			Real mode stack		  |	512 bytes is enough
+ *		+-------------------------------------------------+
+ *		|	0x10000 ~ 0x10FFF		?Page directory table |
+ *		+-------------------------------------------------+
+ *		|	0x11000 ~ 0x12FFF		?Page table			  |
+ *		+-------------------------------------------------+
+ *		|	0x13000 ~ 0x8FFFF		Free memory			  |
+ *		+-------------------------------------------------+
+ *		|	0x90000 ~ 0x9FBFF		Kernel stack		  |	About 64KB is enough
+ *		+-------------------------------------------------+
+ *		|	0x9FC00 ~ 0x9FFFF		Extended BIOS data	  |
+ *		+-------------------------------------------------+
+ *		|	0xA0000 ~ 0xBFFFF		Video memory		  |
+ *		+-------------------------------------------------+
+ *		|	0xC0000 ~ 0xFFFFF		BIOS & ROM			  |
+ *		+-------------------------------------------------+
+ *		|					Free memory					  |
+ *		+-------------------------------------------------+
+ * 
+ *	?: Not sure yet.
+ * 
+ *	It is not the linear address, nor the virtual memory space!
+ */
+
 
  /* The OS use 0x000000~0x100000, using 0x100 pages.
   * These pages should be mapped as F(x) = x.
@@ -27,6 +67,8 @@
 
 #define NUM_OF_PAGE					0x400		/* 1024 pages in a page table */
 #define SIZE_OF_PAGE_TABLE			0x1000		/* Page table's size is 4KB */
+
+#define NUM_OF_PAGE_TABLE			2
 
 
 #define ADDR_RANGE_AVAILABLE		1			/* 1 indicates this memory range is available for OS,
@@ -46,12 +88,12 @@ typedef struct
 
 
   /* Page table is defined at .PG_TBL section,
-   * which is at 0x10000.
+   * which is at 0x20000.
    */
 __attribute__((section(".PG_TBL")))
 PAGE_ITEM page_dir_table[MAX_NUM_OF_PAGE_TABLE];
 __attribute__((section(".PG_TBL")))
-PAGE_ITEM page_table[MAX_NUM_OF_PAGE_TABLE][NUM_OF_PAGE];
+PAGE_ITEM page_table[NUM_OF_PAGE_TABLE][NUM_OF_PAGE];
 
 /* Memory information is stored at 0x6200 */
 __attribute__((section(".mem")))

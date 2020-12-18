@@ -11,6 +11,7 @@
 #include "isr.h"
 #include "../drivers/screen.h"
 #include "../drivers/ports.h"
+#include "../include/stdlib.h"
 
 /*	When CPU received interrupt:
  *	1. Find ISR according to the IDT according to interrupt number.
@@ -31,7 +32,7 @@ void set_interrupt_handler(byte n, ISR_HANDLER handler)
 /* Internel data and functions */
 
 /* To print the message which defines every exception */
-char* exception_messages[] =
+static char* exception_messages[] =
 {
 	"Division By Zero",
 	"Debug",
@@ -56,31 +57,30 @@ char* exception_messages[] =
 	"Machine Check",
 };
 
-void isr_handler(THREAD_CONTEXT r)
+void isr_handler(THREAD_CONTEXT* r)
 {
-	if (interrupt_handlers[r.int_no] != 0)
+	if (interrupt_handlers[r->int_no] != 0)
 	{
-		(*interrupt_handlers[r.int_no])(&r);
+		(*interrupt_handlers[r->int_no])(r);
 	}
 	else
 	{
-		kprintf("received interrupt: 0x%X\n", r.int_no);
-		kprintf("Message: %s\n", exception_messages[r.int_no]);
+		kprintf("received interrupt: 0x%X\n", r->int_no);
+		kprintf("Message: %s\n", exception_messages[r->int_no]);
+		kprintf("eip: 0x%X\n", r->eip);
 		while (1);
 	}
 }
 
-void irq_handler(THREAD_CONTEXT r)
+void irq_handler(THREAD_CONTEXT* r)
 {
-	if (interrupt_handlers[r.int_no] != 0)
-		(*interrupt_handlers[r.int_no])(&r);
-	else
-		kprintf("Interrupt request: %d\n", r.int_no - IRQ0);
+	if (interrupt_handlers[r->int_no] != 0)
+		(*interrupt_handlers[r->int_no])(r);
 
 	/* After every interrupt we need to send an EOI to the PICs
 	 * or they will not send another interrupt again.
 	 */
-	if (r.int_no >= 40)
+	if (r->int_no >= 40)
 		port_byte_out(0xA0, 0x20);	/* slave */
 	port_byte_out(0x20, 0x20);		/* master */
 }

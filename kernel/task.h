@@ -58,7 +58,7 @@ typedef struct
 	dword gs, fs, es, ds;
 	/* General purpose registers */
 	dword edi, esi, ebp, kernel_esp, ebx, edx, ecx, eax;
-	/* Used for interrupts */
+	/* Used for ISR */
 	dword int_no, err_code;
 	/* Pushed by CPU automatically */
 	dword eip, cs, eflags, esp, ss;
@@ -75,7 +75,7 @@ typedef struct _tagTASK
 #pragma pack(pop)
 
 #ifndef TASK_C
-extern TASK* rdy_task;
+//extern TASK* rdy_task;
 extern TASK task_table[NUM_OF_TASK];
 #endif
 

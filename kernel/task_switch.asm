@@ -23,13 +23,13 @@
 
 global _start_task
 	
-; Prototype: void start_task(PROCESS* proc);
+; Prototype: void start_task(TASK* rdy_task);
 ; &proc: ebp + 8
 _start_task:
 	push ebp
 	mov ebp, esp
 
-	mov eax, [ebp + 8]					; Address of process table, pointing to the prepared process.
+	mov eax, [ebp + 8]					; Address in task table, pointing to the prepared process.
 										; And eax is stack top.
 
 	xor ebx, ebx
@@ -42,8 +42,7 @@ _start_task:
 	; Change the TR
 	ltr [eax + TR]
 
-	task_not_changed:
-
+task_not_changed:
 	; Get the base address of TSS
 	push ebx							; eax = get_descriptor_base_addr(ebx);
 	call _get_descriptor_base_addr		; No need to 'add esp, 4'
@@ -54,8 +53,8 @@ _start_task:
 
 	; cr3
 
-	lea ecx, [esp + SIZE_OF_STACK]
-	mov [eax + TSS_ESP0], ecx
+	lea ecx, [esp + SIZE_OF_STACK]		; Make esp points to correct task structure
+	mov [eax + TSS_ESP0], ecx			; when return to kernel.
 	
 	pop gs
 	pop fs

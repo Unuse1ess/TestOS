@@ -11,9 +11,6 @@
 ; Defined in task_switch.asm
 [extern _start_task]
 
-; Defined in task.c
-[extern _rdy_task]
-
 ; Defined in gdt.c
 [extern _get_descriptor_base_addr]
 
@@ -38,28 +35,37 @@ _isr_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
+	
+	; Change the esp if privilege level is changed
 
-	cmp ax, [esp + DSREG]				; if(cur_ss == prev_ds)
+	mov ebx, esp						; ebx now points to the task struct.
+	cmp ax, [ebx + DSREG]				; if(cur_ss == prev_ds)
 	je no_change1						;	goto no_change1;
 
-	; Change the esp if privilege level is changed
-	lea esi, [esp + SIZE_OF_STACK]		; Copy stack data from user stack
-	mov edi, KERNEL_STACK_BASE - 4
-	mov ecx, SIZE_OF_STACK
-	shr ecx, 2
-
-	std
-	rep movsd
-	cld
-
-	mov esp, edi						; New esp for kernel, used for function call.
 	
-no_change1:
-	cmp dword [esp + INT_NUM], 32		; if(int_num < 32 || int_num > 47)
-	jb invoke_isr_handler				;	irq_handler();
-	cmp dword [esp + INT_NUM], 47
-	ja invoke_isr_handler
+	; Notice that esp points to corresponding task table
+;	lea esi, [esp + SIZE_OF_STACK]		; Copy stack data from user stack
+;	mov edi, KERNEL_STACK_BASE - 4
+;	mov ecx, SIZE_OF_STACK
+;	shr ecx, 2
 
+;	std
+;	rep movsd
+;	cld
+
+;	mov esp, edi						; New esp for kernel, used for function call.
+
+	mov esp, KERNEL_STACK_BASE
+
+no_change1:
+	push ebx							; C codes must not change the value of this argument,
+										; unless it is scheduling.
+
+	cmp dword [ebx + INT_NUM], 32		; if(int_num < 32 || int_num > 47)
+	jb invoke_isr_handler				;	irq_handler();
+	cmp dword [ebx + INT_NUM], 47
+	ja invoke_isr_handler
+	
     call _irq_handler					; else
 	jmp end_if							;	isr_handler();
 
@@ -67,12 +73,13 @@ invoke_isr_handler:
 	call _isr_handler
 
 end_if:
+	pop ebx
+
 	mov ax, ss							; if(cur_ss != prev_ds)
-	cmp ax, [esp + DSREG]				;	start_task(rdy_task);
+	cmp ax, [ebx + DSREG]				;	start_task(rdy_task);
 	je no_change2
 
-	mov eax, [_rdy_task]
-	push eax
+	push ebx
 	call _start_task
 
 ; If interrupt happened in kernel mode,
@@ -147,8 +154,6 @@ global _irq13
 global _irq14
 global _irq15
 
-
-global _isr118
 ; System call
 global _isr128
 
@@ -465,12 +470,6 @@ _irq15:
 	cli
 	push byte 15
 	push byte 47
-	jmp _isr_common_stub
-
-_isr118:
-	cli
-	push 0
-	push 0x76
 	jmp _isr_common_stub
 
 ; System call

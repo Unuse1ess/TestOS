@@ -5,12 +5,10 @@
  *
  *-------------------------------------------------------------*/
 
-#define CLOCK_C
-
 #include "../kernel/types.h"
 #include "../cpu/seg.h"
 #include "../kernel/task.h"
-#include "clock.h"
+#include "timer.h"
 #include "../cpu/isr.h"
 #include "../cpu/idt.h"
 #include "ports.h"
@@ -53,7 +51,5 @@ dword sys_get_tick()
 static void clock_callback(THREAD_CONTEXT* regs)
 {
 	tick++;
-	if (tick % 50 == 0)
-		kprintf("%d\n", tick);
 	UNUSED(regs);
 }

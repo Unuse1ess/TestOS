@@ -20,9 +20,8 @@
 #include "../drivers/ports.h"
 #include "sys_call.h"
 #include "../drivers/hard_disk.h"
+#include "../drivers/rtc.h"
 
-
-#define KERNEL_STACK_BASE	0x90000
 
 
 /* Definition of OS information */
@@ -39,18 +38,13 @@ void print_os_info()
 
 void test()
 {
-	void print_screen(char*);
-	dword get_tick();
-	dword a;
+	void print_screen(char* str);
+	int get_tick();
 
-//	__asm("int $3");
+	print_screen("System call\n");
+	int i = get_tick();
 
-	while (1)
-	{
-		a = get_tick();
-		if(a % 2 == 0)
-			print_screen("tick += 2;\n");
-	}
+	while (1);
 }
 
 extern VBE_MODE_INFO vbe_mode_info;
@@ -66,11 +60,11 @@ void kernel_main()
 	init_interrupts();		/* Initialize IDT and IDTR, and enable interrupts */
 	init_sys_call();		/* Initialize system call */
 
-//	clear_screen();
-//	print_os_info();
+	clear_screen();
+	print_os_info();
 //	kprintf("Video memory: 0x%X\n", vbe_mode_info.phys_base);
 
-	pio_hd_read_sector((void*)0x30000, 16, 0, 2, 0, 0);
+//	pio_hd_read_sector((void*)0x30000, 16, 0, 2, 0, 0);
 
 //	pio_hd_write_sector((void*)0x1000, 16, 0, 100, 0, 0);
 
@@ -78,9 +72,5 @@ void kernel_main()
 	//get_pci_cfg();
 
 	init_task((dword)test);
-	rdy_task = &task_table[0];
-	start_task(rdy_task);
-
-	/* Infinite loop, waiting for interrupts. */
-	while (1);
+	start_task(&task_table[0]);
 }
