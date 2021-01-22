@@ -19,7 +19,7 @@
 [bits 32]
 
 ; Defined in gdt.c
-[extern _get_descriptor_base_addr]
+[extern _get_desc_base_addr]
 
 global _start_task
 	
@@ -45,7 +45,7 @@ _start_task:
 task_not_changed:
 	; Get the base address of TSS
 	push ebx							; eax = get_descriptor_base_addr(ebx);
-	call _get_descriptor_base_addr		; No need to 'add esp, 4'
+	call _get_desc_base_addr			; No need to 'add esp, 4'
 
 	mov esp, [ebp + 8]
 

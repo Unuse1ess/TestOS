@@ -70,7 +70,11 @@ typedef struct _tagTASK
 	word ldtr;
 	word tr;
 	SEGMENT_DESCRIPTOR ldt[2];
-}TASK;
+	dword page_dir_tbl_base;
+	dword kernel_stack;
+	dword state;
+	struct _tagTASK* next;
+}TASK, THREAD_CONTROL_BLOCK;
 
 #pragma pack(pop)
 

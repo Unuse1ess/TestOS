@@ -15,6 +15,7 @@
 #include "../drivers/screen.h"
 #include "../include/stdlib.h"
 #include "../include/function.h"
+#include "debug.h"
 
 /*					Physical memory distribution
  *		+-------------------------------------------------+
@@ -26,7 +27,7 @@
  *		+-------------------------------------------------+
  *		|	0x800 ~ 0x8FF			?VBE data			  |
  *		+-------------------------------------------------+
- *		|	0x900 ~ 0xFFF			Free memory			  |
+ *		|	0x900 ~ 0xFFF			?					  |
  *		+-------------------------------------------------+
  *		|	0x1000 ~ 0x7BFF			Kernel code & data	  |
  *		+-------------------------------------------------+
@@ -34,13 +35,17 @@
  *		+-------------------------------------------------+
  *		|	0x7E00 ~ 0x7FFF			Real mode stack		  |	512 bytes is enough
  *		+-------------------------------------------------+
- *		|	0x10000 ~ 0x10FFF		?Page directory table |
+ *		|	0x8000 ~ 0x8FFF			Kernel PDT			  |
  *		+-------------------------------------------------+
- *		|	0x11000 ~ 0x12FFF		?Page table			  |
+ *		|	0x9000 ~ 0x9FFF			Kernel PTE			  |
  *		+-------------------------------------------------+
- *		|	0x13000 ~ 0x8FFFF		Free memory			  |
+ *		|	0xA000 ~ 0x29FFF		Memory map			  |
  *		+-------------------------------------------------+
- *		|	0x90000 ~ 0x9FBFF		Kernel stack		  |	About 64KB is enough
+ *		|	0x2A000 ~ 0x9CFFF		Free memory			  |
+ *		+-------------------------------------------------+
+ *		|	0x9D000 ~ 0x9EFFF		Kernel stack		  | 8KB is enough
+ *		+-------------------------------------------------+
+ *		|	0x9F000 ~ 0x9FBFF		Not used			  |
  *		+-------------------------------------------------+
  *		|	0x9FC00 ~ 0x9FFFF		Extended BIOS data	  |
  *		+-------------------------------------------------+
@@ -56,96 +61,186 @@
  *	It is not the linear address, nor the virtual memory space!
  */
 
+/* Notice that an item in page directory table can manage at most 4MB memory. */
 
- /* The OS use 0x000000~0x100000, using 0x100 pages.
-  * These pages should be mapped as F(x) = x.
-  */
-#define NUM_OF_KERNEL_PAGE			0x100
+#define SIZE_OF_MEM_BMP				0x20000
 
-#define MAX_NUM_OF_PAGE_TABLE		0x400		/* Maximum 1024 page tables */
-#define MAX_SIZE_OF_PAGE_DIR_TABLE	0x1000		/* Page directory table's size is 4KB */
+#define NUM_OF_PAGE_TABLE			0x400			/* Maximum 1024 page tables */
+#define SIZE_OF_PAGE_DIR_TABLE		0x1000			/* Page directory table's size is 4KB */
 
 #define NUM_OF_PAGE					0x400		/* 1024 pages in a page table */
 #define SIZE_OF_PAGE_TABLE			0x1000		/* Page table's size is 4KB */
 
-#define NUM_OF_PAGE_TABLE			2
+/*
+ * According to the physical memory distribution,
+ * page frame #0 ~ #0x29 are used.
+ */
+#define NUM_OF_USED_PAGES			0x2A		/* Pages that are used in advance */
 
 
-#define ADDR_RANGE_AVAILABLE		1			/* 1 indicates this memory range is available for OS,
-													and other values indicate reserved.*/
+/* A bit is set when a corresponding page is used. */
+#define PAGE_FREE					0
+#define PAGE_USED					1
 
-#pragma pack(push, 1)
-
-/* Strucutre of memory information */
-typedef struct
-{
-	qword base_addr;
-	qword length;
-	dword type;
-}MEMORY_BLOCK_INFO;
-
-#pragma pack(pop)
+/* Kernel is mapped to 0xC0000000 of virtual address space */
+#define KERNEL_VA_BASE				0xC0000000
 
 
-  /* Page table is defined at .PG_TBL section,
-   * which is at 0x20000.
-   */
+/* Information for managing memory */
+
+/*
+ * Physical memory that is to be managed.
+ * Every bit in this bitmap represents whether a physical page is used.
+ */
+__attribute__((section(".mmap")))
+static byte memory_bitmap[SIZE_OF_MEM_BMP];
+
+/* Kernel's PDT and PTE, and PTE is shared by all the user programs. */
 __attribute__((section(".PG_TBL")))
-PAGE_ITEM page_dir_table[MAX_NUM_OF_PAGE_TABLE];
+static PAGE_ITEM kernel_page_dir_table[1024];
 __attribute__((section(".PG_TBL")))
-PAGE_ITEM page_table[NUM_OF_PAGE_TABLE][NUM_OF_PAGE];
+static PAGE_ITEM kernel_page_table[1024];
 
-/* Memory information is stored at 0x6200 */
+/* Memory information is stored at */
 __attribute__((section(".mem")))
-MEMORY_BLOCK_INFO mem_block_info[20];		/* Temporarily support 20 memory block info */
+static const MEMORY_BLOCK_INFO mem_block_info[20];		/* Temporarily support 20 memory block info */
 
 
 struct __dummy
 {};
 
-/* Initialization of kernel pages and enter page mode. */
-void init_page()
+
+void set_page(dword page_num, dword attr);
+dword is_page_free(dword page_num);
+
+
+void init_memory()
 {
-	int i, j;
-	dword page_base = 0;
+	dword i, j, end_byte, end_bit;
+	const MEMORY_BLOCK_INFO* p = mem_block_info;
 
-	page_dir_table[0].attribute = PAGE_SYSTEM | PAGE_PRESENT;
-	page_dir_table[0].base_low = LOWORD(page_table) >> 12;
-	page_dir_table[0].base_high = HIWORD(page_table);
-	page_dir_table[0].avl = 0;
+	/*
+	 * Initialize the memory bitmap.
+	 * Physical memory that OS cannot use
+	 * (where type != 1) is marked as used pages.
+	 */
 
-	for (i = 0; i < NUM_OF_KERNEL_PAGE; i++)
+	/* First treat all pages are used */
+	memset(memory_bitmap, 0xFF, SIZE_OF_MEM_BMP + 2);
+
+	/* Then free the unused pages below 1MB */
+	for (i = 0x2A; i <= 0x9C; i++)
+		set_page(i, PAGE_FREE);
+	/* And free available memory above 1MB according to memory block info */
+	while (p->type != 0)
 	{
-		page_table[0][i].attribute = PAGE_SYSTEM | PAGE_PRESENT;
-		page_table[0][i].base_low = LOWORD(page_base) >> 12;
-		page_table[0][i].base_high = HIWORD(page_base);
-		/* System pages are default allocated */
-		page_table[0][i].allocated = PAGE_ALLOCATED;
+		if (p->base_addr < 0x100000)
+			goto _continue;
+		if (p->type == 1)
+		{
+			/* Page as unit, represented as a bit */
+			i = (dword)p->base_addr >> 12;
+			end_byte = i + (dword)p->length >> 12;
 
-		page_base += SIZE_OF_PAGE;
+			end_bit = end_byte & 7;		/* Equivalent to ... % 8 but faster */
+			end_byte >>= 3;
+			j = i & 7;					/* i is start byte and j is start bit in start byte */
+			i >>= 3;
+			/* High (8 - j) bits is set to 0 */
+			if (j)
+			{
+				memory_bitmap[i] &= ((1 << (byte)j) - 1);
+				i++;
+			}
+			/* Low nbit bits is set to 0 */
+			if (end_bit)
+			{
+				memory_bitmap[end_byte] &= ~((1 << (byte)end_bit) - 1);
+				/* No need to 'end_byte--;' because end_bit is behind end_byte. */
+			}
+			memset(&memory_bitmap[i], 0, end_byte - i);
+		}
+		
+	_continue:
+		p++;
 	}
+
+	/* 
+	 * Initialize kernel directory page table
+	 * Map as F(x) = x where 0 <= x < 1MB
+	 */
+	memset(kernel_page_dir_table, 0, SIZE_OF_PAGE_DIR_TABLE);
+	kernel_page_dir_table[0].attribute = PAGE_SYSTEM | PAGE_PRESENT;
+	kernel_page_dir_table[0].base_low = LOWORD(kernel_page_table) >> 12;
+	kernel_page_dir_table[0].base_high = HIWORD(kernel_page_table);
+	kernel_page_dir_table[0].avl = 0;
+
+	/* Initialize kernel page table */
+	memset(kernel_page_table, 0, SIZE_OF_PAGE_TABLE);
+	for (i = 0; i < NUM_OF_USED_PAGES; i++)
+	{
+		kernel_page_table[i].attribute = PAGE_SYSTEM | PAGE_PRESENT;
+		kernel_page_table[i].base_low = LOWORD(i);
+		kernel_page_table[i].base_high = HIWORD(i << 12);
+		kernel_page_table[i].avl = 0;
+	}
+	/*
+	 * Page frame #0x9A ~ #0x9E are used as kernel stack.
+	 * And #0x9F ~ #0xFF is are used as BIOS and video card.
+	 */
+	for (i = 0x9D; i < 0x100; i++)
+	{
+		kernel_page_table[i].attribute = PAGE_SYSTEM | PAGE_PRESENT;
+		kernel_page_table[i].base_low = LOWORD(i);
+		kernel_page_table[i].base_high = HIWORD(i << 12);
+		kernel_page_table[i].avl = 0;
+	}
+
+	/* Change address in gdtr and idtr */
+	//i = get_desc_base_addr(KERNEL_CS) | KERNEL_VA_BASE;
+	//set_desc_base_addr(KERNEL_CS, i);
+	//i = get_desc_base_addr(KERNEL_DS) | KERNEL_VA_BASE;
+	//set_desc_base_addr(KERNEL_DS, i);
+
+	dword is_page_free(dword);
+
+	kprintf("%d %d\n", is_page_free(0), is_page_free(0x2A));
+	
+	/* Enter page mode */
+	set_cr3((void*)kernel_page_dir_table);
+	start_paging();
 }
 
-dword get_phys_addr(dword virt_addr)
+void* alloc_page()
 {
-	dword dir_index, page_index, offset;
+	int i, j, page_num;
 
-	dir_index = GET_PAGE_TABLE_INDEX(virt_addr);
-	page_index = GET_PAGE_INDEX(virt_addr);
-	offset = GET_OFFSET_IN_PAGE(virt_addr);
+	for (i = 5; i < SIZE_OF_MEM_BMP; i++)
+	{
+		if (memory_bitmap[i] != 0xFF)
+		{
+			page_num = i << 3;
+			for (j = 0; j < 8; j++, i++)
+			{
+				if (is_page_free(i))
+				{
+					set_page(i, PAGE_USED);
+					return (void*)(i << 12);
+				}
+			}
+		}
+	}
 
-	return MAKEDWORD(page_table[dir_index][page_index].base_low << 12, page_table[dir_index][page_index].base_high) + offset;
-}
-
-void* page_allocate(unsigned size, unsigned flags)
-{
+	/* TODO: Do swap out */
+	panic("Run out of memory!");
 	return NULL;
 }
 
 
-void page_free(void* ptr)
+void free_page(void* ptr)
 {
-
+	/* TODO: Validate the pointer */
+	set_page((dword)ptr >> 12, PAGE_FREE);
 }
 
 
@@ -163,9 +258,30 @@ void CALLBACK pf_handler(THREAD_CONTEXT* regs)
 
 	dword addr;
 
+	/* TODO: Do swap in */
+
 	kprintf("Page fault!\n");
 	addr = get_page_fault_addr();
 	kprintf("Address: 0x%p\n", addr);
 
 	while (1);
+}
+
+
+/* Internel functions */
+
+void set_page(dword page_num, dword attr)
+{
+	dword byte_num = page_num >> 3;				/* byte_num = page_num / 8; */
+	dword bit_num = page_num & 7;				/* bit_num = page_num % 8; */
+
+	if (attr == PAGE_FREE)
+		memory_bitmap[byte_num] &= ~(1 << bit_num);	/* Clear the bit */
+	else
+		memory_bitmap[byte_num] |= (1 << bit_num);	/* Set the bit */
+}
+
+dword is_page_free(dword page_num)
+{
+	return !(memory_bitmap[page_num >> 3] & (1 << (page_num & 7)));
 }

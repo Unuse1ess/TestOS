@@ -17,8 +17,9 @@ ASM_OBJ = ${ASM_SOURCES:.asm=.o}
 OBJ = ${C_OBJ} ${ASM_OBJ}
 
 # Address of section
-SECTION_ADDR = -Ttext 0x1000 -Tdata 0x3500 \
-				--section-start .PG_TBL=0x10000 \
+SECTION_ADDR = -Ttext 0x1000 -Tdata 0x3800 \
+				--section-start .PG_TBL=0x8000 \
+				--section-start .mmap=0xA000 \
 				--section-start .apm=0x500 \
 				--section-start .mem=0x600 \
 				--section-start .video=0x800
@@ -61,7 +62,7 @@ qdb: kernel.elf
 
 	
 # Write the kernel to a hard disk image
-disk: os-image.bin kernel.elf
+disk: os-image.bin
 	dd if=$< of=D:/Code/OS/test.img bs=512 count=200 conv=notrunc
 
 

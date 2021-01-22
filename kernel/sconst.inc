@@ -4,7 +4,7 @@
 ;		2020/11/22 Created by MYM
 ;-------------------------------------------------------
 
-KERNEL_STACK_BASE equ 0x9FC00
+KERNEL_STACK_BASE equ 0x9F000
 
 
 ; Structure of THREAD_CONTEXT

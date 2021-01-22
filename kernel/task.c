@@ -23,7 +23,7 @@
 #define IOPL_3				0x3000
 #define IOPL_0				0x0000
 
-#define TASK_EFLAGS			0x0202
+#define TASK_EFLAGS			0x3202
 
 
 TASK task_table[NUM_OF_TASK];

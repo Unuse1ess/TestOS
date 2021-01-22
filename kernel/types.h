@@ -9,14 +9,14 @@
 #define TYPES_H
 
 /* From stdint.h */
-typedef signed char			int8;
-typedef unsigned char		uint8;
-typedef short				int16;
-typedef unsigned short		uint16;
-typedef int					int32;
-typedef unsigned			uint32;
-typedef long long			int64;
-typedef unsigned long long	uint64;
+typedef signed char			int8, int8_t;
+typedef unsigned char		uint8, uint8_t;
+typedef short				int16, int16_t;
+typedef unsigned short		uint16, uint16_t;
+typedef int					int32, int32_t;
+typedef unsigned			uint32, uint32_t;
+typedef long long			int64, int64_t;
+typedef unsigned long long	uint64, uint64_t;
 
 typedef uint8				byte, BYTE, u8;
 typedef uint16				word, WORD, u16;

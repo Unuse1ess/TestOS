@@ -21,7 +21,7 @@ typedef struct
 	dword oem_str;				/* Real mode long pointer */
 	dword capabilities;
 	dword video_mode_ptr;		/* isa vbeFarPtr */
-	word TotalMemory;			/* as # of 64KB blocks */
+	word total_memory;			/* as # of 64KB blocks */
 }VBE_INFO;
 
 typedef struct

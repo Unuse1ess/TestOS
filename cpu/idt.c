@@ -150,7 +150,4 @@ void init_interrupts()
 	init_clock(50);			/* IRQ0: clock */
 	init_keyboard();		/* IRQ1: keyboard */
 	init_hd();				/* Init hard disk */
-
-	/* Enable interruptions */
-	__asm volatile("sti");
 }

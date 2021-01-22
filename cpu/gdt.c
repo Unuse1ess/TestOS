@@ -92,11 +92,25 @@ word add_gate_descriptor(word seg_sel, dword offset, byte authority, byte param_
 	return (avl_gdt_index - 1) << 3;
 }
 
-dword get_descriptor_base_addr(word tss_sel)
+/* Get the logical address in the descriptor */
+dword get_desc_base_addr(word sel)
 {
-	word index = tss_sel >> 3;
+	word index = sel >> 3;
 
 	return (dword)gdt[index].seg_base_high << 24 |
 		(dword)gdt[index].seg_base_mid << 16 |
 		(dword)gdt[index].seg_base_low;
+}
+
+/* Set new logical address in the descriptor */
+void set_desc_base_addr(word sel, dword new_addr)
+{
+	word index = sel >> 3;
+
+	if (index >= avl_gdt_index)
+		return;
+
+	gdt[index].seg_base_low = LOWORD(new_addr);
+	gdt[index].seg_base_mid = LOBYTE(HIWORD(new_addr));
+	gdt[index].seg_base_high = HIBYTE(HIWORD(new_addr));
 }

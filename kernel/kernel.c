@@ -21,7 +21,7 @@
 #include "sys_call.h"
 #include "../drivers/hard_disk.h"
 #include "../drivers/rtc.h"
-
+#include "../drivers/pci.h"
 
 
 /* Definition of OS information */
@@ -52,25 +52,19 @@ extern VBE_MODE_INFO vbe_mode_info;
 void kernel_main()
 {
 	init_gdt();				/* Reinitialize GDT and GDTR */
-	init_apm();
+	clear_screen();
 
-//	init_page();			/* Initialize PDE and PTE */
-//	start_paging();			/* Enable page mode */
+	init_apm();
 
 	init_interrupts();		/* Initialize IDT and IDTR, and enable interrupts */
 	init_sys_call();		/* Initialize system call */
 
-	clear_screen();
+	init_memory();			/* Initialize memory information and enter page mode */
+
 	print_os_info();
-//	kprintf("Video memory: 0x%X\n", vbe_mode_info.phys_base);
 
-//	pio_hd_read_sector((void*)0x30000, 16, 0, 2, 0, 0);
-
-//	pio_hd_write_sector((void*)0x1000, 16, 0, 100, 0, 0);
-
-	//void get_pci_cfg();
-	//get_pci_cfg();
-
+//	checkAllBuses();
+	while (1);
 	init_task((dword)test);
 	start_task(&task_table[0]);
 }

@@ -19,7 +19,7 @@
 #define SIZE_OF_PAGE				0x1000		/* Size of a page is 4KB */
 
 
-/* Macros for page item */
+/* Macros for page attribute */
 #define PAGE_NOTPRESENT				0x00
 #define PAGE_PRESENT				0x01
 
@@ -41,26 +41,18 @@
 #define PAGE_NOTDIRTY				0x00
 #define PAGE_DIRTY					0x40
 
-/* AVL bits, are used by OS to indicate page state of allcoated,
- * and page table table of full.
- */
-#define PAGE_ALLOCATED				0x1
-#define PAGE_NOTALLOCATED			0x0
-
-#define PAGE_TABLE_FULL				0x2
-#define PAGE_TABLE_NOT_FULL			0x0
 
 #define GET_PAGE_TABLE_INDEX(addr)	((((dword)(addr) >> 22) & 0x3FF))
+#define GET_PAGE_TABLE_OFFSET(addr)	((((dword)(addr) >> 20) & 0x3FF))
 #define GET_PAGE_INDEX(addr)		((((dword)(addr) >> 12) & 0x3FF))
+#define GET_PAGE_OFFSET(addr)		((((dword)(addr) >> 10) & 0x3FF))
 #define GET_OFFSET_IN_PAGE(addr)	((dword)addr & 0xFFF)
 
+
+#define MEM_ALIGN(size, align) (((dword)(size) + ((align) - 1)) & ~((align) - 1))
+
+
 #define GET_PAGE_BASE(l, h) ((dword)(((dword)(l)) | (((dword)(h)) << 4)))
-
-
-/* Macros for page allocating. 
- * The lower byte is the same as above.
- */
-
 
 
  /* Cancel the alignment */
@@ -70,22 +62,36 @@ typedef struct
 {
 	byte attribute;
 	byte global_page : 1;
-	byte allocated : 1;			/* AVL bits for OS, here we use it to indicated if it is allocated */
-	byte avl : 2;				/* AVL bits for OS */
-	byte base_low : 4;
-	word base_high;
+	byte avl : 3;				/* AVL bits for OS, plan to make it the number of not being accessed. */
+	byte base_low : 4;			/* Low 4 bits of address */
+	word base_high;				/* High 16 bits of address */
 }PAGE_ITEM, *PAGE_DIRECTORY_TABLE, *PAGE_TABLE;
+
+/* Strucutre of memory information */
+typedef struct
+{
+	qword base_addr;
+	qword length;
+	dword type;
+}MEMORY_BLOCK_INFO;
+
+
 
 /* Pop previous alignment out */
 #pragma pack(pop)
+//
+//#define MAKE_PAGE_ITEM(addr, attr) (addr >> 12)
+//
+//typedef dword PAGE_ITEM, *PAGE_DIRECTORY_TABLE, *PAGE_TABLE;
 
 /* Implemented in page.asm */
 extern void start_paging();
 extern dword get_page_fault_addr();
+extern void set_cr3(void* pdt_base);
 
 /* Implemented in memory.c */
-void init_page();
-dword get_phys_addr(dword virt_addr);
+void init_memory();
+void set_page(dword page_num, dword attr);
 
 /* Call back function of ISR */
 void CALLBACK gp_handler(THREAD_CONTEXT* regs);
