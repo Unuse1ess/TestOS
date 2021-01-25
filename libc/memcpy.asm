@@ -31,7 +31,6 @@ _memcpy:
 	mov esi, [ebp + 0xc]
 	mov edi, eax
 
-	cld
 	rep movsd
 	
 	mov ecx, ebx

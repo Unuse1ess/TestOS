@@ -7,6 +7,7 @@
 KERNEL_STACK_BASE equ 0x9F000
 
 
+; Structure of THREAD
 ; Structure of THREAD_CONTEXT
 STACK_BASE		equ					0
 GSREG			equ	STACK_BASE
@@ -30,11 +31,22 @@ ESPREG			equ	EFLAGSREG		+ 4
 SSREG			equ	ESPREG			+ 4
 ; End of THREAD_CONTEXT
 
+; Structure of THREAD
 LDTR			equ	SSREG			+ 4
-TR				equ LDTR			+ 2
-LDT				equ	TR				+ 2
+Reserved		equ LDTR			+ 2
+LDT				equ	Reserved		+ 2
+PROCESS			equ LDT				+ 16
+KERNEL_ESP		equ PROCESS			+ 4
+USER_ESP		equ KERNEL_ESP		+ 4
+
+; End of THREAD_CONTEXT
+
+; ...
+; End of THREAD
+
+SIZE_OF_THREAD_CONTEXT equ SSREG	+ 4
+
+; Structure of PROCESS
+CR3REG			equ					0
 
 TSS_ESP0		equ					4
-
-SIZE_OF_THREAD_CONTEXT equ LDTR
-SIZE_OF_STACK equ LDTR

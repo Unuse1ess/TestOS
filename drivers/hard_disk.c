@@ -7,6 +7,7 @@
 
 #include "../kernel/types.h"
 #include "../cpu/seg.h"
+#include "../cpu/page.h"
 #include "../kernel/task.h"
 #include "../drivers/ports.h"
 #include "screen.h"

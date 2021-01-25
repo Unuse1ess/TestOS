@@ -7,6 +7,7 @@
 
 #include "../kernel/types.h"
 #include "../cpu/seg.h"
+#include "../cpu/page.h"
 #include "task.h"
 #include "../cpu/isr.h"
 #include "../cpu/idt.h"

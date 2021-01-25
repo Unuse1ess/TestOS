@@ -9,10 +9,11 @@
 
 #include "types.h"
 #include "../cpu/seg.h"
+#include "../cpu/page.h"
 #include "task.h"
+#include "memory.h"
 #include "kernel.h"
 #include "../drivers/screen.h"
-#include "../cpu/page.h"
 #include "../cpu/isr.h"
 #include "../cpu/idt.h"
 #include "../include/stdlib.h"
@@ -23,6 +24,8 @@
 #include "../drivers/rtc.h"
 #include "../drivers/pci.h"
 
+
+extern THREAD* rdy_thread;
 
 /* Definition of OS information */
 word os_ver = MAKEWORD(MINOR_OS_VER, MAJOR_OS_VER);
@@ -36,9 +39,9 @@ void print_os_info()
 	kprintf("Welcome to %s\n", os_name);
 }
 
+void print_screen(char* str);
 void test()
 {
-	void print_screen(char* str);
 	int get_tick();
 
 	print_screen("System call\n");
@@ -47,7 +50,7 @@ void test()
 	while (1);
 }
 
-extern VBE_MODE_INFO vbe_mode_info;
+extern TCB tcb;
 
 void kernel_main()
 {
@@ -64,7 +67,9 @@ void kernel_main()
 	print_os_info();
 
 //	checkAllBuses();
-	while (1);
-	init_task((dword)test);
-	start_task(&task_table[0]);
+	init_tss();
+	create_proc((void*)test);
+	rdy_thread = tcb;
+	*(char*)0x9FFFFFFF = -1;
+	start_user_thread(tcb);
 }

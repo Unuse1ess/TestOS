@@ -7,6 +7,7 @@
 
 #include "../kernel/types.h"
 #include "../cpu/seg.h"
+#include "../cpu/page.h"
 #include "../kernel/task.h"
 #include "timer.h"
 #include "../cpu/isr.h"
@@ -20,6 +21,7 @@
 static dword tick = 50;
 
 static void clock_callback(THREAD_CONTEXT*);
+static void do_timer(THREAD_CONTEXT*);
 
 void init_clock(dword freq)
 {
@@ -28,8 +30,8 @@ void init_clock(dword freq)
 	byte low = (byte)(divisor & 0xFF);
 	byte high = (byte)((divisor >> 8) & 0xFF);
 
-	/* Install the function we just wrote */
-	set_interrupt_handler(IRQ0, clock_callback);
+	/* Install the function */
+	set_interrupt_handler(IRQ0, do_timer);
 
 	/* Send the command */
 	port_byte_out(0x43, 0x36); /* Command port */
@@ -48,8 +50,11 @@ dword sys_get_tick()
 
 /* Internel function */
 
-static void clock_callback(THREAD_CONTEXT* regs)
+static void do_timer(THREAD_CONTEXT* regs)
 {
 	tick++;
+	/* TODO: Clear the accessed bit of pages and add references. */
+	schedule();
+
 	UNUSED(regs);
 }

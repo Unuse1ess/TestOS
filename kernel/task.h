@@ -14,9 +14,20 @@
 #ifndef SEG_H
 #error "cpu/seg.h" is not included
 #endif
+#ifndef PAGE_H
+#error "cpu/page.h" is not included
+#endif // !PAGE_H
 
 
-#define NUM_OF_TASK 1
+/* Thread state */
+#define READY		0
+#define BLOCKED		1
+
+
+/* Thread priority */
+#define PRIORITY_BELOW_NORMAL	2
+#define PRIORITY_NORMAL			4
+#define PRIORITY_ABOVE_NORMAL	8
 
 
 #pragma pack(push, 1)
@@ -46,7 +57,6 @@ typedef struct
 
 	word trap_flag;
 	word io_bitmap_base;
-	word io_bitmap_end;
 } TASK_STATE_SEGMENT;
 
 /*	When interrupts happened, esp will points to eip in this structure,
@@ -64,31 +74,48 @@ typedef struct
 	dword eip, cs, eflags, esp, ss;
 }THREAD_CONTEXT;
 
-typedef struct _tagTASK
+typedef struct _tagPROCESS
 {
-	THREAD_CONTEXT regs;			/* Execute envrionment */
+	PAGE_DIRECTORY_TABLE pdt_base;
+	dword pid;
+	struct _tagPROCESS* next;
+}PROCESS, *PCB;
+
+typedef struct _tagTHREAD
+{
+	THREAD_CONTEXT regs;			/* Execute environment */
 	word ldtr;
-	word tr;
+	word reserved;
 	SEGMENT_DESCRIPTOR ldt[2];
-	dword page_dir_tbl_base;
-	dword kernel_stack;
+
+	PROCESS* proc;					/* Process that the thread belongs to */
+	dword kernel_esp;
+	dword user_esp;
+
+	dword tid;
+	dword count;
+	dword priority;
 	dword state;
-	struct _tagTASK* next;
-}TASK, THREAD_CONTROL_BLOCK;
+	struct _tagTHREAD* next;
+}THREAD, *TCB;
 
 #pragma pack(pop)
 
-#ifndef TASK_C
-//extern TASK* rdy_task;
-extern TASK task_table[NUM_OF_TASK];
-#endif
 
-/* Implemented in task_switch.asm */
-extern void start_task(TASK* task);
+ 
+/* Implemented in switch.asm */
+extern void start_user_thread(THREAD* thread);
 
+/* Implemented in loar_tr.asm */
+extern void load_tr(word tr);
+
+/* Implemented in load_ldtr.asm */
+extern void load_ldtr(word sel);
 
 /* Implemented in task.c */
-void init_task(dword start_addr);
-void init_tss(TASK_STATE_SEGMENT* tss_addr);
+dword create_proc(void* start_addr);
+void init_context(THREAD* thread);
+void init_tss();
+void schedule();
 
 #endif

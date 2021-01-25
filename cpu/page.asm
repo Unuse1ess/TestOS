@@ -9,6 +9,8 @@
 global _start_paging
 global _get_page_fault_addr
 global _set_cr3
+global _get_cr3
+global _invalidate_page
 
 
 ; Prototype: void start_paging();
@@ -29,3 +31,15 @@ _set_cr3:
 	mov eax, [esp + 4]
 	mov cr3, eax
 	ret
+
+; Prototype: void* get_cr3();
+_get_cr3:
+	mov eax, cr3
+	and eax, 0xFFFFF000
+	ret
+
+; Prototype: void _invalidate_page(void* v_addr);
+_invalidate_page:
+	invlpg [esp + 4]
+	ret
+

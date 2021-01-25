@@ -9,6 +9,8 @@
 
 #include "types.h"
 #include "../cpu/seg.h"
+#include "../cpu/page.h"
+#include "memory.h"
 #include "task.h"
 #include "../include/stdlib.h"
 
@@ -18,19 +20,38 @@
   * This value means,
   * IOPL = 0, IF = 1.
   * Others are default 0.
-  * 0x0202 0x3202
   */
 #define IOPL_3				0x3000
 #define IOPL_0				0x0000
 
-#define TASK_EFLAGS			0x3202
+#define TASK_EFLAGS			0x0202
+
+/* Virtual address */
+#define DEFAULT_EIP		0x400000
+#define DEFAULT_ESP		0xA0000000
 
 
-TASK task_table[NUM_OF_TASK];
-static TASK_STATE_SEGMENT tss[NUM_OF_TASK];
-static dword num_of_task;
 
-TASK* rdy_task;						/* Next task to run */
+#define get_current_process() rdy_thread->proc
+#define get_current_thread() rdy_thread
+
+
+/* Defined in memory.c.
+ * Every process's PDT should copy from kernel's one to
+ * share the kernel.
+ */
+extern PAGE_ITEM kernel_page_dir_table[1024];
+
+
+/* In this OS, we do not use TSS. Therefore, we use
+ * a common TSS for all the tasks, and no need to switch tr.
+ */
+TASK_STATE_SEGMENT tss;
+static word tr;
+
+PCB pcb;
+TCB tcb;
+THREAD* rdy_thread;						/* Next task to run */
 
 void init_ldt(LDT ldt)
 {
@@ -57,37 +78,98 @@ void init_ldt(LDT ldt)
 	ldt[1].attribute = SA_COUNT_BY_4KB | SA_USE_32BITS;
 }
 
-void init_tss(TASK_STATE_SEGMENT* tss_addr)
+void init_tss()
 {
 	/* Initialize TSS and TR */
-	memset((word*)tss_addr, 0, sizeof(TASK_STATE_SEGMENT) >> 1);
+	memset((void*)&tss, 0, sizeof(TASK_STATE_SEGMENT));
 
-	tss_addr->ss0 = KERNEL_DS;
-	tss_addr->io_bitmap_base = sizeof(TASK_STATE_SEGMENT) - 2;		/* No IO bitmap */
-	tss_addr->io_bitmap_end = TSS_IO_BITMAP_END;
+	tss.ss0 = KERNEL_DS;
+	tr = add_tss_descriptor((dword)&tss, sizeof(TASK_STATE_SEGMENT));
+	load_tr(tr);
 }
 
-void init_task(dword start_addr)
+dword sys_fork()
+{
+}
+
+dword create_proc(void* start_addr)
+{
+	PROCESS* proc;
+	THREAD* thread;
+	
+	void* p, *old_cr3;
+
+	/* Allocate PDT in kernel space */
+	p = alloc_page(PAGE_SYSTEM);
+	valloc_page((dword)p, (dword)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+	memcpy(p, kernel_page_dir_table, SIZE_OF_PAGE);
+	((PAGE_DIRECTORY_TABLE)p)[1023] = MAKE_PDT_ITEM(p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+
+	/* Switch cr3 to modify its PDT easily */
+//	old_cr3 = get_cr3();
+	set_cr3(p);
+
+	/* Allocate PCB and TCB at kernel space */
+	p = alloc_page(PAGE_SYSTEM);
+	proc = valloc_page((dword)p, (dword)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+	memset(proc, 0, SIZE_OF_PAGE);
+
+	proc->pdt_base = (PAGE_DIRECTORY_TABLE)p;
+	proc->pid = (dword)proc >> 12;
+	proc->next = pcb;
+	pcb = proc;
+
+	/* Create main thread and allocate kernel stack at kernel space */
+	p = alloc_page(PAGE_SYSTEM);
+	valloc_page((dword)p, (dword)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+	memset(p, 0, SIZE_OF_PAGE);
+	thread = (THREAD*)((dword)p + SIZE_OF_PAGE - sizeof(THREAD));
+	thread->kernel_esp = (dword)thread;
+	thread->proc = proc;
+	thread->count = thread->priority = PRIORITY_NORMAL;
+	thread->tid = (dword)p >> 12;
+	thread->next = tcb;
+	tcb = thread;
+
+	/* Allocate user stack at user space */
+	p = alloc_page(PAGE_USER);
+	valloc_page(DEFAULT_ESP - 2 * SIZE_OF_PAGE, (dword)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_WRITE);
+	p = alloc_page(PAGE_USER);
+	valloc_page(DEFAULT_ESP - SIZE_OF_PAGE, (dword)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_WRITE);
+
+	/* Allocate code page */
+	p = alloc_page(PAGE_USER);
+	valloc_page(DEFAULT_EIP, (dword)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_ONLY);
+	memcpy((void*)DEFAULT_EIP, start_addr, SIZE_OF_PAGE);
+
+	init_context(thread);
+	thread->state = READY;
+
+	return proc->pid;
+}
+
+void init_context(THREAD* thread)
 {
 	/* Initialize LDT */
-	init_ldt(task_table[0].ldt);
+	init_ldt(thread->ldt);
 
 	/* Initialize IDT selector and IDT descriptor */
-	task_table[0].ldtr = add_ldt_descriptor((dword)task_table[0].ldt , 2 * sizeof(SEGMENT_DESCRIPTOR));
+	thread->ldtr = add_ldt_descriptor((dword)thread->ldt, 2 * sizeof(SEGMENT_DESCRIPTOR));
 
 	/* Initialize segment selector */
-	task_table[0].regs.cs = TASK_CS;
-	task_table[0].regs.ds =
-		task_table[0].regs.es =
-		task_table[0].regs.fs =
-		task_table[0].regs.gs =
-		task_table[0].regs.ss = TASK_DS;
+	thread->regs.cs = TASK_CS;
+	thread->regs.ds =
+		thread->regs.es =
+		thread->regs.fs =
+		thread->regs.gs =
+		thread->regs.ss = TASK_DS;
 	
-	task_table[0].regs.eip = start_addr;
-	task_table[0].regs.esp = 0x200000;			/* Should allocated by page */
-	task_table[0].regs.eflags = TASK_EFLAGS;
+	thread->regs.eip = DEFAULT_EIP;
+	thread->regs.esp = DEFAULT_ESP;
+	thread->regs.eflags = TASK_EFLAGS;
+}
 
-	/* Initialize TSS */
-	init_tss(&tss[0]);
-	task_table[0].tr = add_tss_descriptor((dword)&tss[0], sizeof(TASK_STATE_SEGMENT));
+void schedule()
+{
+	
 }

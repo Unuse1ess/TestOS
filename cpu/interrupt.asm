@@ -9,7 +9,7 @@
 [bits 32]
 
 ; Defined in task_switch.asm
-[extern _start_task]
+[extern _start_user_thread]
 
 ; Defined in gdt.c
 [extern _get_descriptor_base_addr]
@@ -20,7 +20,9 @@
 
 ; Common ISR codes
 _isr_common_stub:
-	; Save context
+	; Save context in kernel thread's stack.
+	; We use esp0 in TSS to make esp points to
+	; kernel stack when interrupt happened.
     pushad
 	push ds
 	push es
@@ -38,63 +40,27 @@ _isr_common_stub:
 	
 	; Change the esp if privilege level is changed
 
-	mov ebx, esp						; ebx now points to the task struct.
-	cmp ax, [ebx + DSREG]				; if(cur_ss == prev_ds)
-	je no_change1						;	goto no_change1;
+	mov ebx, esp						; ebx now points to the task struct
 
-	
-	; Notice that esp points to corresponding task table
-;	lea esi, [esp + SIZE_OF_STACK]		; Copy stack data from user stack
-;	mov edi, KERNEL_STACK_BASE - 4
-;	mov ecx, SIZE_OF_STACK
-;	shr ecx, 2
+	push ebx							; C codes must not change the value of this argument
 
-;	std
-;	rep movsd
-;	cld
-
-;	mov esp, edi						; New esp for kernel, used for function call.
-
-	mov esp, KERNEL_STACK_BASE
-
-no_change1:
-	push ebx							; C codes must not change the value of this argument,
-										; unless it is scheduling.
-
-	cmp dword [ebx + INT_NUM], 32		; if(int_num < 32 || int_num > 47)
-	jb invoke_isr_handler				;	irq_handler();
-	cmp dword [ebx + INT_NUM], 47
+	mov eax, [ebx + INT_NUM]
+	cmp eax, 32							; if(int_num < 32 || int_num > 47)
+	jb invoke_isr_handler				;	isr_handler();
+	cmp eax, 47
 	ja invoke_isr_handler
 	
     call _irq_handler					; else
-	jmp end_if							;	isr_handler();
+	jmp end_if							;	irq_handler();
 
 invoke_isr_handler:
 	call _isr_handler
 
 end_if:
-	pop ebx
 
-	mov ax, ss							; if(cur_ss != prev_ds)
-	cmp ax, [ebx + DSREG]				;	start_task(rdy_task);
-	je no_change2
+	; Return from interrupt
+	call _start_user_thread
 
-	push ebx
-	call _start_task
-
-; If interrupt happened in kernel mode,
-; it is no need to restart process, at least so far.
-no_change2:
-	pop gs
-	pop fs
-	pop es
-	pop ds
-    popad
-
-    add esp, 8
-
-    sti
-    iretd
 	
 ; We don't get information about which interrupt was caller
 ; when the handler is run, so we will need to have a different handler

@@ -9,6 +9,7 @@
 
 #include "../kernel/types.h"
 #include "seg.h"
+#include "page.h"
 #include "../kernel/task.h"
 #include "isr.h"
 #include "idt.h"
@@ -16,7 +17,6 @@
 #include "../drivers/keyboard.h"
 #include "../drivers/timer.h"
 #include "../drivers/hard_disk.h"
-#include "page.h"
 #include "../kernel/sys_call.h"
 
 
@@ -26,7 +26,8 @@ INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
 IDTR idtr;
 
 extern void load_idtr();
-
+extern void CALLBACK handle_gp(THREAD_CONTEXT*);
+extern void CALLBACK handle_pf(THREAD_CONTEXT*);
 
 
 /* Install interrupt entries 0 ~ 47 */
@@ -136,8 +137,8 @@ void set_idtr()
 
 void init_exceptions()
 {
-	set_interrupt_handler(INT_GENERAL_PROTECTION, gp_handler);
-	set_interrupt_handler(INT_PAGE_FAULT, pf_handler);
+	set_interrupt_handler(INT_GENERAL_PROTECTION, handle_gp);
+	set_interrupt_handler(INT_PAGE_FAULT, handle_pf);
 }
 
 void init_interrupts()
