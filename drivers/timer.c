@@ -20,8 +20,7 @@
 /* Private variables */
 static dword tick = 50;
 
-static void clock_callback(THREAD_CONTEXT*);
-static void do_timer(THREAD_CONTEXT*);
+static void do_timer();
 
 void init_clock(dword freq)
 {
@@ -50,11 +49,9 @@ dword sys_get_tick()
 
 /* Internel function */
 
-static void do_timer(THREAD_CONTEXT* regs)
+static void do_timer()
 {
 	tick++;
 	/* TODO: Clear the accessed bit of pages and add references. */
 	schedule();
-
-	UNUSED(regs);
 }

@@ -89,14 +89,17 @@ typedef struct _tagTHREAD
 	SEGMENT_DESCRIPTOR ldt[2];
 
 	PROCESS* proc;					/* Process that the thread belongs to */
-	dword kernel_esp;
-	dword user_esp;
+	dword kernel_esp;				/* Points to inner of kernel stack */
+	PAGE_DIRECTORY_TABLE pdt_base;	/* The same as proc->pdt_base */
 
+	dword state;
 	dword tid;
 	dword count;
 	dword priority;
-	dword state;
-	struct _tagTHREAD* next;
+
+	struct _tagTHREAD* all_next;
+	struct _tagTHREAD* rdy_next;
+	struct _tagTHREAD* block_next;
 }THREAD, *TCB;
 
 #pragma pack(pop)
@@ -104,7 +107,7 @@ typedef struct _tagTHREAD
 
  
 /* Implemented in switch.asm */
-extern void start_user_thread(THREAD* thread);
+extern void switch_to(THREAD* thread);
 
 /* Implemented in loar_tr.asm */
 extern void load_tr(word tr);

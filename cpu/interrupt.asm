@@ -8,15 +8,8 @@
 
 [bits 32]
 
-; Defined in task_switch.asm
-[extern _start_user_thread]
-
-; Defined in gdt.c
-[extern _get_descriptor_base_addr]
-
 ; Defined in isr.c
 [extern _isr_handler]
-[extern _irq_handler]
 
 ; Common ISR codes
 _isr_common_stub:
@@ -38,29 +31,20 @@ _isr_common_stub:
     mov fs, ax
     mov gs, ax
 	
-	; Change the esp if privilege level is changed
-
-	mov ebx, esp						; ebx now points to the task struct
-
-	push ebx							; C codes must not change the value of this argument
-
-	mov eax, [ebx + INT_NUM]
-	cmp eax, 32							; if(int_num < 32 || int_num > 47)
-	jb invoke_isr_handler				;	isr_handler();
-	cmp eax, 47
-	ja invoke_isr_handler
-	
-    call _irq_handler					; else
-	jmp end_if							;	irq_handler();
-
-invoke_isr_handler:
+	; esp is now the same as rdy_thread
 	call _isr_handler
 
 end_if:
 
 	; Return from interrupt
-	call _start_user_thread
+	pop gs
+	pop fs
+	pop es
+	pop ds
+	popad
 
+	add esp, 8
+	iretd
 	
 ; We don't get information about which interrupt was caller
 ; when the handler is run, so we will need to have a different handler

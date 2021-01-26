@@ -125,7 +125,7 @@ extern void isr128();
 #define IRQ14 46
 #define IRQ15 47
 
-typedef void (CALLBACK *ISR_HANDLER)(THREAD_CONTEXT*);
+typedef void (CALLBACK *ISR_HANDLER)();
 
 void set_interrupt_handler(byte n, ISR_HANDLER handler);
 

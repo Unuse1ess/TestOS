@@ -18,6 +18,8 @@
 
 typedef dword (*SYS_SRV_ROUTINE)(dword);
 
+extern THREAD* rdy_thread;
+
 
 /* System service table */
 static const SYS_SRV_ROUTINE sys_srv_tbl[] =
@@ -31,8 +33,9 @@ static const SYS_SRV_ROUTINE sys_srv_tbl[] =
  * When it returns from the function, regs->eax should contains the return
  * value, if it is applicable.
  */
-void do_sys_call(THREAD_CONTEXT* regs)
+void do_sys_call()
 {
+	THREAD_CONTEXT* regs = &rdy_thread->regs;
 	regs->eax = (*sys_srv_tbl[regs->eax])(regs->esp + 4);
 }
 

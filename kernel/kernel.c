@@ -52,6 +52,8 @@ void test()
 
 extern TCB tcb;
 
+
+
 void kernel_main()
 {
 	init_gdt();				/* Reinitialize GDT and GDTR */
@@ -69,7 +71,4 @@ void kernel_main()
 //	checkAllBuses();
 	init_tss();
 	create_proc((void*)test);
-	rdy_thread = tcb;
-	*(char*)0x9FFFFFFF = -1;
-	start_user_thread(tcb);
 }

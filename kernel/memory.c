@@ -246,12 +246,17 @@ void* alloc_page(dword attr)
 /*	Virtual page allocation. It allocates a VIRTUAL page at current
  * virtual memory. v_addr is address in virtual memory. p_addr is
  * address in physical memory. attr indicates attributes of this page.
+ * 
+ * NOTICE: If you don't know or not sure how it works,
+ * don't make any changes on it!
  */
 void* valloc_page(dword v_addr, dword p_addr, dword attr)
 {
+	/* This virtual address points to itself */
 	PAGE_DIRECTORY_TABLE pdt = (PAGE_DIRECTORY_TABLE)0xFFFFF000;
 	dword pdt_index = GET_PAGE_TABLE_INDEX(v_addr);
 	dword pte_index = GET_PAGE_INDEX(v_addr);
+	/* This virtual address points to page table */
 	PAGE_TABLE pte = (PAGE_TABLE)(0xFFC00000 + (pte_index << 12));
 	void* p;
 	int i;
@@ -263,6 +268,8 @@ void* valloc_page(dword v_addr, dword p_addr, dword attr)
 
 		pdt[pdt_index] = MAKE_PDT_ITEM(p, PAGE_USER | PAGE_PRESENT | PAGE_READ_WRITE);
 		invalidate_page((void*)v_addr);
+
+		/* Virtual pages are not allocated initially */
 		for (i = pte_index; i < pte_index + NUM_OF_PAGE; i++)
 		{
 			p = MAKE_VA(1023, pdt_index, i << 2);
@@ -275,6 +282,7 @@ void* valloc_page(dword v_addr, dword p_addr, dword attr)
 	if (*(PAGE_ITEM*)p)
 		return NULL;
 
+	/* Map v_addr onto p_addr */
 	*(PAGE_ITEM*)p = MAKE_PTE_ITEM(p_addr, attr);
 	invalidate_page((void*)v_addr);
 
@@ -289,7 +297,7 @@ void free_page(void* ptr)
 
 void vfree_page(void* vptr)
 {
-
+	/* TODO: Delete corresponding virtual page and physical page */
 }
 
 
@@ -301,11 +309,16 @@ void CALLBACK handle_gp(THREAD_CONTEXT* regs)
 }
 
 /* Handler of page fault */
+/*
+err_code:
+ 31              4               0
++--------------+---+---+---+---+---+
+|   Reserved   | I | R | U | W | P |
++--------------+---+---+---+---+---+
+*/
 void CALLBACK handle_pf(THREAD_CONTEXT* regs)
 {
 	UNUSED(regs);
-
-	dword addr;
 
 	/* TODO: Do swap in */
 

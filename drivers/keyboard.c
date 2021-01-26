@@ -39,10 +39,8 @@ static const char sc_ascii[] =
 		'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '
 };
 
-void keyboard_callback(THREAD_CONTEXT* regs)
+void keyboard_callback()
 {
-	UNUSED(regs);
-
 	/* The 8042 leaves us the scancode in port 0x60, the output buffer register */
 	byte scancode = port_byte_in(0x60);
 

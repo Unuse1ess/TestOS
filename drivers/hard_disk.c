@@ -22,7 +22,7 @@
 
 #define SIZE_OF_SECTOR	0x200
 
-static void hd_request(THREAD_CONTEXT* regs);
+static void hd_request();
 
 static BOOL ready;
 
@@ -120,7 +120,7 @@ void pio_hd_write_sector(void* buffer, byte count, byte drive, byte sector, word
 
 /* Internel function */
 
-static void hd_request(THREAD_CONTEXT* regs)
+static void hd_request()
 {
 	byte state = port_byte_in(PIO_BASE_ADDR1 + 7);
 

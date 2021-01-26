@@ -50,7 +50,15 @@ TASK_STATE_SEGMENT tss;
 static word tr;
 
 PCB pcb;
-TCB tcb;
+
+/* all_tcb lists all the threads, and
+ * rdy_tcb lists all the prepared threads.
+ * block_tcb lists threads that blocked itself.
+ * Other blocked threads are at corresponding queue.
+ */
+TCB all_tcb;
+TCB rdy_tcb;
+TCB block_tcb;
 THREAD* rdy_thread;						/* Next task to run */
 
 void init_ldt(LDT ldt)
@@ -128,8 +136,8 @@ dword create_proc(void* start_addr)
 	thread->proc = proc;
 	thread->count = thread->priority = PRIORITY_NORMAL;
 	thread->tid = (dword)p >> 12;
-	thread->next = tcb;
-	tcb = thread;
+	thread->all_next = all_tcb;
+	all_tcb = thread;
 
 	/* Allocate user stack at user space */
 	p = alloc_page(PAGE_USER);
@@ -171,5 +179,6 @@ void init_context(THREAD* thread)
 
 void schedule()
 {
-	
+	/* TODO: Add schedule algorithm */
+	switch_to(all_tcb);
 }

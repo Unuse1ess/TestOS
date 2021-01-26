@@ -22,6 +22,8 @@
  *	5. Return.
  */
 
+extern THREAD* rdy_thread;
+
 static ISR_HANDLER interrupt_handlers[256];
 
 void set_interrupt_handler(byte n, ISR_HANDLER handler)
@@ -33,7 +35,7 @@ void set_interrupt_handler(byte n, ISR_HANDLER handler)
 /* Internel data and functions */
 
 /* To print the message which defines every exception */
-static char* exception_messages[] =
+static const char* exception_messages[] =
 {
 	"Division By Zero",
 	"Debug",
@@ -58,8 +60,10 @@ static char* exception_messages[] =
 	"Machine Check",
 };
 
-void isr_handler(THREAD_CONTEXT* r)
+void isr_handler()
 {
+	THREAD_CONTEXT* r = &rdy_thread->regs;
+	
 	if (interrupt_handlers[r->int_no] != 0)
 	{
 		(*interrupt_handlers[r->int_no])(r);
@@ -71,17 +75,14 @@ void isr_handler(THREAD_CONTEXT* r)
 		kprintf("eip: 0x%X\n", r->eip);
 		while (1);
 	}
-}
-
-void irq_handler(THREAD_CONTEXT* r)
-{
-	if (interrupt_handlers[r->int_no] != 0)
-		(*interrupt_handlers[r->int_no])(r);
 
 	/* After every interrupt we need to send an EOI to the PICs
 	 * or they will not send another interrupt again.
 	 */
-	if (r->int_no >= 40)
-		port_byte_out(0xA0, 0x20);	/* slave */
-	port_byte_out(0x20, 0x20);		/* master */
+	if (r->int_no >= 32 || r->int_no <= 47)
+	{
+		if (r->int_no >= 40)
+			port_byte_out(0xA0, 0x20);	/* slave */
+		port_byte_out(0x20, 0x20);		/* master */
+	}
 }

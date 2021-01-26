@@ -17,38 +17,47 @@
 [bits 32]
 
 ; Defined in gdt.c
-[extern _get_desc_base_addr]
 [extern _tss]
 
 ; Defined in task.c
 [extern _rdy_thread]
 
-global _start_user_thread
+global _switch_to
 
+; Prototype: void switch_to(THREAD* next);
+_switch_to:
+	mov ecx, [esp + 4]
 
+; Save kernel thread's context
+	push ebp
+	push ebx
+	push esi
+	push edi
 
-; Prototype: void start_user_thread();
-; Return to a prepared user stack, using rdy_thread.
-_start_user_thread:
-	; Make it able to return to kernel stack
-	; tss.esp0 = rdy_thread + sizeof(THREAD_CONTEXT);
+; Save stack pointer at TCB
 	mov eax, [_rdy_thread]
+	mov [eax + KERNEL_ESP], esp
 
-	lldt [eax + LDTR]
+; Change the interrupt number so that IRQs can receive EOI
+	mov eax, [eax + INT_NUM]
+	mov [ecx + INT_NUM], eax
 
-	add eax, SIZE_OF_THREAD_CONTEXT
+; Change the page directory table
+	mov eax, [ecx + T_CR3REG]
+	mov cr3, eax
+
+; Switch to target kernel thread
+	mov esp, [ecx + KERNEL_ESP]
+	lea eax, [ecx + SIZE_OF_THREAD_CONTEXT]
 	mov [_tss + TSS_ESP0], eax
 
-	mov esp, [_rdy_thread]
+; Change current running thread
+	mov [_rdy_thread], ecx
 
-	; Restore context
-	pop gs
-	pop fs
-	pop es
-	pop ds
-	popad
+; Restore kernel context
+	pop edi
+	pop esi
+	pop ebx
+	pop ebp
 
-	add esp, 8
-
-	iretd
-
+	ret
