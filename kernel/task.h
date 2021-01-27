@@ -84,9 +84,6 @@ typedef struct _tagPROCESS
 typedef struct _tagTHREAD
 {
 	THREAD_CONTEXT regs;			/* Execute environment */
-	word ldtr;
-	word reserved;
-	SEGMENT_DESCRIPTOR ldt[2];
 
 	PROCESS* proc;					/* Process that the thread belongs to */
 	dword kernel_esp;				/* Points to inner of kernel stack */
@@ -100,6 +97,9 @@ typedef struct _tagTHREAD
 	struct _tagTHREAD* all_next;
 	struct _tagTHREAD* rdy_next;
 	struct _tagTHREAD* block_next;
+
+	/* Magic number that checking if it is corrupted */
+	dword magic;
 }THREAD, *TCB;
 
 #pragma pack(pop)
@@ -108,6 +108,7 @@ typedef struct _tagTHREAD
  
 /* Implemented in switch.asm */
 extern void switch_to(THREAD* thread);
+extern void return_to_user();
 
 /* Implemented in loar_tr.asm */
 extern void load_tr(word tr);
@@ -117,8 +118,10 @@ extern void load_ldtr(word sel);
 
 /* Implemented in task.c */
 dword create_proc(void* start_addr);
+THREAD* create_thread(PROCESS* proc, void* start_addr);
 void init_context(THREAD* thread);
 void init_tss();
+void init_ldt();
 void schedule();
 
 #endif

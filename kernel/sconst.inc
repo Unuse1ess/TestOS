@@ -34,15 +34,9 @@ SSREG			equ	ESPREG			+ 4
 SIZE_OF_THREAD_CONTEXT equ SSREG	+ 4
 
 ; Structure of THREAD
-LDTR			equ	SSREG			+ 4
-Reserved		equ LDTR			+ 2
-LDT				equ	Reserved		+ 2
-PROCESS			equ LDT				+ 16
+PROCESS			equ SSREG			+ 4
 KERNEL_ESP		equ PROCESS			+ 4
 T_CR3REG		equ KERNEL_ESP		+ 4
-STATE			equ T_CR3REG		+ 4
-
-; End of THREAD_CONTEXT
 
 ; ...
 ; End of THREAD

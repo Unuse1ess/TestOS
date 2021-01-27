@@ -34,7 +34,7 @@ void init_gdt()
 }
 
 /* Add a descriptor to GDT and return the selector */
-word add_global_descriptor(dword seg_base, dword seg_limit, byte authority, byte attr)
+word add_global_descriptor(void* seg_base, dword seg_limit, byte authority, byte attr)
 {
 	if (avl_gdt_index > NUM_OF_GDT_DESC)
 		return 0;
@@ -58,14 +58,14 @@ word add_global_descriptor(dword seg_base, dword seg_limit, byte authority, byte
 }
 
 /* Add a LDT descriptor to GDT and return the selector */
-word add_ldt_descriptor(dword seg_base, dword seg_limit)
+word add_ldt_descriptor(void* seg_base, dword seg_limit)
 {
 	return add_global_descriptor(seg_base, seg_limit,
 		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | LDT_DESCRIPTOR, SA_USE_32BITS);
 }
 
 /* Add a TSS descriptor to GDT and return the selector */
-word add_tss_descriptor(dword seg_base, dword seg_limit)
+word add_tss_descriptor(void* seg_base, dword seg_limit)
 {
 	return add_global_descriptor(seg_base, seg_limit - 1,
 		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | AVAILABLE_386TSS, SA_USE_32BITS);
@@ -103,7 +103,7 @@ dword get_desc_base_addr(word sel)
 }
 
 /* Set new logical address in the descriptor */
-void set_desc_base_addr(word sel, dword new_addr)
+void set_desc_base_addr(word sel, void* new_addr)
 {
 	word index = sel >> 3;
 

@@ -6,6 +6,8 @@
 
 %include "kernel/sconst.inc"
 
+global _return_to_user
+
 [bits 32]
 
 ; Defined in isr.c
@@ -16,7 +18,7 @@ _isr_common_stub:
 	; Save context in kernel thread's stack.
 	; We use esp0 in TSS to make esp points to
 	; kernel stack when interrupt happened.
-    pushad
+	pushad
 	push ds
 	push es
 	push fs
@@ -25,16 +27,16 @@ _isr_common_stub:
 	; Switch to kernel data segment selector.
 	; Notice that ss has been already changed to
 	; kernel data segment by CPU automatically.
-    mov ax, ss
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
+	mov ax, ss
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
 	
 	; esp is now the same as rdy_thread
 	call _isr_handler
 
-end_if:
+_return_to_user:
 
 	; Return from interrupt
 	pop gs

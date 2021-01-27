@@ -217,11 +217,11 @@ void set_idt();
 
 /* Implemented in gdt.c */
 void init_gdt();
-word add_ldt_descriptor(dword seg_base, dword seg_limit);
-word add_tss_descriptor(dword seg_base, dword seg_limit);
-word add_global_descriptor(dword seg_base, dword seg_limit, byte authority, byte attr);
+word add_ldt_descriptor(void* seg_base, dword seg_limit);
+word add_tss_descriptor(void* seg_base, dword seg_limit);
+word add_global_descriptor(void* seg_base, dword seg_limit, byte authority, byte attr);
 word add_gate_descriptor(word seg_sel, dword offset, byte authority, byte param_cnt);
 dword get_desc_base_addr(word sel);
-void set_desc_base_addr(word sel, dword new_addr);
+void set_desc_base_addr(word sel, void* new_addr);
 
 #endif

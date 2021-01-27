@@ -34,32 +34,6 @@ void set_interrupt_handler(byte n, ISR_HANDLER handler)
 
 /* Internel data and functions */
 
-/* To print the message which defines every exception */
-static const char* exception_messages[] =
-{
-	"Division By Zero",
-	"Debug",
-	"Non Maskable Interrupt",
-	"Breakpoint",
-	"Into Detected Overflow",
-	"Out of Bounds",
-	"Invalid Opcode",
-	"No Coprocessor",
-
-	"Double Fault",
-	"Coprocessor Segment Overrun",
-	"Bad TSS",
-	"Segment Not Present",
-	"Stack Fault",
-	"General Protection Fault",
-	"Page Fault",
-	"Unknown Interrupt",
-
-	"Coprocessor Fault",
-	"Alignment Check",
-	"Machine Check",
-};
-
 void isr_handler()
 {
 	THREAD_CONTEXT* r = &rdy_thread->regs;
@@ -68,10 +42,9 @@ void isr_handler()
 	{
 		(*interrupt_handlers[r->int_no])(r);
 	}
-	else
+	else if(r->int_no > 47)
 	{
 		kprintf("received interrupt: 0x%X\n", r->int_no);
-		kprintf("Message: %s\n", exception_messages[r->int_no]);
 		kprintf("eip: 0x%X\n", r->eip);
 		while (1);
 	}

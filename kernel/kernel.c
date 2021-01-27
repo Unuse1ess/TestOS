@@ -25,8 +25,6 @@
 #include "../drivers/pci.h"
 
 
-extern THREAD* rdy_thread;
-
 /* Definition of OS information */
 word os_ver = MAKEWORD(MINOR_OS_VER, MAJOR_OS_VER);
 char os_name[] = OS_NAME;
@@ -50,13 +48,11 @@ void test()
 	while (1);
 }
 
-extern TCB tcb;
-
-
-
 void kernel_main()
 {
 	init_gdt();				/* Reinitialize GDT and GDTR */
+	init_tss();
+	init_ldt();
 	clear_screen();
 
 	init_apm();
@@ -69,6 +65,10 @@ void kernel_main()
 	print_os_info();
 
 //	checkAllBuses();
-	init_tss();
-	create_proc((void*)test);
+	extern void test_A();
+	extern void test_B();
+
+	create_proc((void*)test_A);
+	create_proc((void*)test_B);
+	schedule();
 }
