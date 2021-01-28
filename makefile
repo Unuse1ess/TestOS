@@ -17,7 +17,7 @@ ASM_OBJ = ${ASM_SOURCES:.asm=.o}
 OBJ = ${C_OBJ} ${ASM_OBJ}
 
 # Address of section
-SECTION_ADDR = -Ttext 0x1000 -Tdata 0x3C00 \
+SECTION_ADDR = -Ttext 0x1000 -Tdata 0x3E00 \
 				--section-start .PG_TBL=0x8000 \
 				--section-start .mmap=0xA000 \
 				--section-start .apm=0x500 \

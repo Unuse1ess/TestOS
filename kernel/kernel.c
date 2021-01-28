@@ -40,20 +40,19 @@ void print_os_info()
 void print_screen(char* str);
 void test()
 {
-	int get_tick();
+	int i = 16, j = 0;
 
-	print_screen("System call\n");
-	int i = get_tick();
+	i /= j;
 
 	while (1);
 }
+
 
 void kernel_main()
 {
 	init_gdt();				/* Reinitialize GDT and GDTR */
 	init_tss();
 	init_ldt();
-	clear_screen();
 
 	init_apm();
 
@@ -62,12 +61,14 @@ void kernel_main()
 
 	init_memory();			/* Initialize memory information and enter page mode */
 
+	clear_screen();
 	print_os_info();
 
 //	checkAllBuses();
 	extern void test_A();
 	extern void test_B();
 
+//	create_proc(test);
 	create_proc((void*)test_A);
 	create_proc((void*)test_B);
 	schedule();

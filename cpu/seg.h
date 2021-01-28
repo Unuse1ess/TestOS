@@ -46,8 +46,8 @@
 #define KERNEL_DS							0x10			/* #2 in GDT */
 
 /* Selector for local task */
-#define TASK_CS					(RPL_RING3 | TI_LOCAL_DESCRIPTOR)
-#define TASK_DS					(8 | RPL_RING3 | TI_LOCAL_DESCRIPTOR)
+#define USER_CS					(RPL_RING3 | TI_LOCAL_DESCRIPTOR)
+#define USER_DS					(8 | RPL_RING3 | TI_LOCAL_DESCRIPTOR)
 
 /*										Structure of segment descriptor
  *  63																									0

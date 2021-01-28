@@ -37,6 +37,26 @@ _isr_common_stub:
 	call _isr_handler
 
 _return_to_user:
+; After every interrupt we need to send an EOI to the PICs
+; or they will not send another interrupt again.
+	mov ecx, [esp + INT_NUM]
+
+	cmp ecx, 32
+	jb not_irq
+	cmp ecx, 47
+	ja not_irq
+
+	mov al, 0x20
+
+	cmp ecx, 40
+	jb not_slave
+
+	out 0xA0, al
+
+not_slave:
+	out 0x20, al
+
+not_irq:
 
 	; Return from interrupt
 	pop gs

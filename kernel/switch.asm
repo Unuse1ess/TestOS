@@ -38,7 +38,7 @@ _switch_to:
 	mov eax, [_rdy_thread]
 	mov [eax + KERNEL_ESP], esp
 
-; Change the interrupt number so that IRQs can receive EOI
+; Change the interrupt number to decide if it needs to send EOI
 	mov eax, [eax + INT_NUM]
 	mov [ecx + INT_NUM], eax
 
@@ -61,3 +61,4 @@ _switch_to:
 	pop ebp
 
 	ret
+

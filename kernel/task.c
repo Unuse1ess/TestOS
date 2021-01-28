@@ -25,14 +25,11 @@
 
 #define TASK_EFLAGS			0x0202
 
-/* Virtual address */
+  /* Virtual address */
 #define DEFAULT_EIP		0x400000
 #define DEFAULT_ESP		0xA0000000
 
 
-
-#define get_current_process() rdy_thread->proc
-#define get_current_thread() rdy_thread
 
 
 /* Defined in memory.c.
@@ -109,7 +106,7 @@ dword sys_fork()
 dword create_proc(void* start_addr)
 {
 	PROCESS* proc;
-	void* p, *cr3;
+	void* p, * cr3, * old_cr3;
 
 	/* Allocate PDT in kernel space */
 	cr3 = alloc_page(PAGE_SYSTEM);
@@ -117,8 +114,8 @@ dword create_proc(void* start_addr)
 	memcpy(cr3, kernel_page_dir_table, SIZE_OF_PAGE);
 	((PAGE_DIRECTORY_TABLE)cr3)[1023] = MAKE_PDT_ITEM(cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
 
-	/* Switch cr3 to modify its PDT easily */
-//	old_cr3 = get_cr3();
+	/* Switch cr3 to modify its user space easily */
+	old_cr3 = get_cr3();
 	set_cr3(cr3);
 
 	/* Allocate PCB and TCB at kernel space */
@@ -134,10 +131,12 @@ dword create_proc(void* start_addr)
 	/* Create main thread */
 	create_thread(proc, start_addr);
 
+	set_cr3(old_cr3);
+
 	return proc->pid;
 }
 
-THREAD* create_thread(PROCESS* proc ,void* start_addr)
+THREAD* create_thread(PROCESS* proc, void* start_addr)
 {
 	void* p;
 	THREAD* thread;
@@ -167,6 +166,7 @@ THREAD* create_thread(PROCESS* proc ,void* start_addr)
 	/* Allocate code page */
 	p = alloc_page(PAGE_USER);
 	valloc_page(DEFAULT_EIP, (dword)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_ONLY);
+	/* Copy codes to virtual memory */
 	memcpy((void*)DEFAULT_EIP, start_addr, SIZE_OF_PAGE);
 
 	init_context(thread);
@@ -175,54 +175,124 @@ THREAD* create_thread(PROCESS* proc ,void* start_addr)
 
 void init_context(THREAD* thread)
 {
+	/* Construct stack frame */
 	*(dword*)((dword)thread - 4) = (dword)return_to_user;
+	thread->kernel_esp = ((dword)thread - 20);
 
 	/* Initialize segment selector */
-	thread->regs.cs = TASK_CS;
+	thread->regs.cs = USER_CS;
 	thread->regs.ds =
 		thread->regs.es =
 		thread->regs.fs =
 		thread->regs.gs =
-		thread->regs.ss = TASK_DS;
-	
+		thread->regs.ss = USER_DS;
+
 	thread->regs.eip = DEFAULT_EIP;
 	thread->regs.esp = DEFAULT_ESP;
 	thread->regs.eflags = TASK_EFLAGS;
-	thread->kernel_esp = ((dword)thread - 20);
 }
 
+dword suspend_thread(TCB* block_queue, dword tid, dword ms)
+{
+	THREAD* p = rdy_tcb, *thread = NULL, *prev = rdy_tcb;
+
+	while (p)
+	{
+		if (p->tid == tid)
+		{
+			thread = p;
+			break;
+		}
+		prev = p;
+		p = p->all_next;
+	}
+
+	if (thread == NULL)
+		return -1;
+
+	if (!block_queue)
+		block_queue = &block_tcb;
+
+	prev->rdy_next = thread->rdy_next;
+	thread->rdy_next = NULL;
+	thread->rdy_next = *block_queue;
+	*block_queue = thread;
+
+	thread->state = BLOCKED;
+
+	if(thread == get_current_thread())
+		schedule();
+
+	return 0;
+}
+
+
+dword resume_thread(TCB* block_queue, dword tid)
+{
+	THREAD* p, * prev, * thread = NULL;
+
+	if (!block_queue)
+		block_queue = &block_tcb;
+
+	p = prev = *block_queue;
+	while (p)
+	{
+		if (p->tid == tid)
+		{
+			thread = p;
+			break;
+		}
+
+		prev = p;
+		p = p->block_next;
+	}
+
+	if (thread == NULL)
+		return -1;
+
+	prev->block_next = thread->block_next;
+	thread->block_next = NULL;
+	thread->rdy_next = rdy_tcb;
+	rdy_tcb = thread;
+
+	thread->state = READY;
+}
+
+/*	Choose the thread that has the highest tick count.
+ * If all the threads have the same tick count, choose
+ * the thread that is the first to be ready. If all the
+ * tick count is 0, add the tick count according to thread's
+ * priority and current state.
+ */
 void schedule()
 {
-	/* TODO: Add schedule algorithm */
-	//THREAD* thread = rdy_tcb, *next = rdy_tcb;
-	//BOOL flg = FALSE;
-	//
-	//get_current_thread()->count--;
-	//while (thread)
-	//{
-	//	if (thread->count > next->count && thread->count)
-	//	{
-	//		next = thread;
-	//		flg = TRUE;
-	//	}
-	//	thread = thread->rdy_next;
-	//}
-	//if (!flg)
-	//{
-	//	/* All are not available */
-	//	thread = all_tcb;
-	//	while (thread)
-	//	{
-	//		if (thread->state == BLOCKED)
-	//			thread->count >>= 1;
-	//		thread->count += thread->priority;
-	//		thread = thread->all_next;
-	//	}
-	//}
+	THREAD* thread, *next;
+	
+	if(get_current_thread()->state == READY)
+		get_current_thread()->count--;
 
+reschedule:
+	thread = rdy_tcb;
+	next = rdy_tcb;
+	while (thread)
+	{
+		if (thread->count >= next->count)
+			next = thread;
+		thread = thread->rdy_next;
+	}
 
-	THREAD* thread = rdy_tcb;
-	if(get_current_thread() && get_current_thread()->rdy_next)
-		thread = get_current_thread()->rdy_next;
-	switch_to(thread);
+	if (!next->count)
+	{
+		/* All are not available */
+		thread = all_tcb;
+		while (thread)
+		{
+			if (thread->state == BLOCKED)
+				thread->count >>= 1;
+			thread->count += thread->priority;
+			thread = thread->all_next;
+		}
+		goto reschedule;
+	}
+	switch_to(next);
 }

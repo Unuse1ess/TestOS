@@ -124,4 +124,12 @@ void init_tss();
 void init_ldt();
 void schedule();
 
+#ifndef TASK_C
+extern THREAD* rdy_thread;
+#endif
+
+#define get_current_process() rdy_thread->proc
+#define get_current_thread() rdy_thread
+
+
 #endif
