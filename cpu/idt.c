@@ -148,7 +148,7 @@ void init_interrupts()
 	set_idtr();				/* Load idtr */
 
 	init_irq();
-	init_clock(50);			/* IRQ0: clock */
+	init_clock(50);			/* IRQ0: clock, 50ms per tick */
 	init_keyboard();		/* IRQ1: keyboard */
 	init_hd();				/* Init hard disk */
 }

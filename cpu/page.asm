@@ -16,9 +16,23 @@ global _invalidate_page
 ; Prototype: void start_paging();
 _start_paging:
 ; This function assume that PE and cr3 is set.
+
+; Enable global pages
+	mov eax, cr4
+	bts eax, 7				; Set PGE (bit 7)
+	; TODO: Enable PAE
+
+	mov cr4, eax
+
 	mov eax, cr0
-	or eax, 0x80000000		; Set PG bit
+	bts eax, 31				; Set PG (bit 31), enable paging
+
+; Maximize the performance of processor by caching
+	btr eax, 30				; Clear CD (bit 30)
+	btr eax, 29				; Clear NW (bit 29)
+
 	mov cr0, eax
+	
 	ret
 	
 ; Prototype: dword get_page_fault_addr();

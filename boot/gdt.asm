@@ -40,5 +40,4 @@ gdt_descriptor:
 ; the higher 13 bits of offset to gdt_start is the
 ; index in GDT, and in assembly code we can load them
 ; to a segment register directly.
-CODE_SEG equ gdt_code - gdt_start
-DATA_SEG equ gdt_data - gdt_start
+

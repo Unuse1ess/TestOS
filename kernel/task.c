@@ -12,6 +12,7 @@
 #include "../cpu/page.h"
 #include "memory.h"
 #include "task.h"
+#include "spin_lock.h"
 #include "../include/stdlib.h"
 
 
@@ -31,6 +32,8 @@
 
 
 
+/* Defined in timer.c */
+extern dword tick;
 
 /* Defined in memory.c.
  * Every process's PDT should copy from kernel's one to
@@ -59,6 +62,9 @@ THREAD* rdy_thread;						/* Next task to run */
 
 SEGMENT_DESCRIPTOR ldt[2];
 word ldtr;
+
+void init_context(THREAD* thread);
+
 
 void init_ldt()
 {
@@ -99,12 +105,43 @@ void init_tss()
 	load_tr(tr);
 }
 
-dword sys_fork()
-{
-}
+/* Only copy caller thread */
+//dword sys_fork()
+//{
+//	PROCESS* proc;
+//	THREAD* thread;
+//	void* p, * cr3, * old_cr3;
+//
+//	cr3 = alloc_page(PAGE_SYSTEM);
+//	valloc_page((dword)cr3, (dword)cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+//	memcpy(cr3, (void*)0xFFC00000, SIZE_OF_PAGE);
+//	((PAGE_DIRECTORY_TABLE)cr3)[1023] = MAKE_PDT_ITEM(cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+//
+//	/* Switch cr3 to modify its user space easily */
+//	old_cr3 = get_cr3();
+//	set_cr3(cr3);
+//
+//	p = alloc_page(PAGE_SYSTEM);
+//	proc = valloc_page((dword)p, (dword)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+//	memset(proc, 0, SIZE_OF_PAGE);
+//
+//	proc->pdt_base = (PAGE_DIRECTORY_TABLE)cr3;
+//	proc->pid = (dword)proc >> 12;
+//	proc->next = pcb;
+//	pcb = proc;
+//
+//	thread = create_thread(proc, get_current_thread()->priority, (void*)get_current_thread()->regs.eip);
+//	memcpy(&thread->regs, &get_current_thread()->regs, sizeof(THREAD_CONTEXT));
+//	thread->regs.eax = 0;
+//	set_cr3(old_cr3);
+//
+//	return proc->pid;
+//}
 
-dword create_proc(void* start_addr)
+dword create_proc(void* start_addr, dword priority)
 {
+	static SPIN_LOCK lock = { 0 };
+
 	PROCESS* proc;
 	void* p, * cr3, * old_cr3;
 
@@ -118,26 +155,32 @@ dword create_proc(void* start_addr)
 	old_cr3 = get_cr3();
 	set_cr3(cr3);
 
-	/* Allocate PCB and TCB at kernel space */
+	/* Allocate PCB at kernel space */
 	p = alloc_page(PAGE_SYSTEM);
 	proc = valloc_page((dword)p, (dword)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
 	memset(proc, 0, SIZE_OF_PAGE);
 
 	proc->pdt_base = (PAGE_DIRECTORY_TABLE)cr3;
 	proc->pid = (dword)proc >> 12;
+	proc->start_tick = tick;
 	proc->next = pcb;
+
+	spin_lock(&lock);
 	pcb = proc;
+	spin_unlock(&lock);
 
 	/* Create main thread */
-	create_thread(proc, start_addr);
+	create_thread(proc, priority, start_addr);
 
 	set_cr3(old_cr3);
 
 	return proc->pid;
 }
 
-THREAD* create_thread(PROCESS* proc, void* start_addr)
+THREAD* create_thread(PROCESS* proc, dword priority,void* start_addr)
 {
+	static SPIN_LOCK lock = { 0 };
+
 	void* p;
 	THREAD* thread;
 
@@ -148,14 +191,16 @@ THREAD* create_thread(PROCESS* proc, void* start_addr)
 	thread = (THREAD*)((dword)p + SIZE_OF_PAGE - sizeof(THREAD));
 	thread->kernel_esp = (dword)thread;
 	thread->proc = proc;
-	thread->count = thread->priority = PRIORITY_NORMAL;
+	thread->count = thread->priority = priority;
 	thread->tid = (dword)p >> 12;
 	thread->pdt_base = proc->pdt_base;
 
+	spin_lock(&lock);
 	thread->all_next = all_tcb;
 	all_tcb = thread;
 	thread->rdy_next = rdy_tcb;
 	rdy_tcb = thread;
+	spin_unlock(&lock);
 
 	/* Allocate user stack at user space */
 	p = alloc_page(PAGE_USER);
@@ -192,6 +237,7 @@ void init_context(THREAD* thread)
 	thread->regs.eflags = TASK_EFLAGS;
 }
 
+
 dword suspend_thread(TCB* block_queue, dword tid, dword ms)
 {
 	THREAD* p = rdy_tcb, *thread = NULL, *prev = rdy_tcb;
@@ -211,13 +257,16 @@ dword suspend_thread(TCB* block_queue, dword tid, dword ms)
 		return -1;
 
 	if (!block_queue)
-		block_queue = &block_tcb;
+		return -1;
 
 	prev->rdy_next = thread->rdy_next;
 	thread->rdy_next = NULL;
 	thread->rdy_next = *block_queue;
 	*block_queue = thread;
 
+	if (ms < 20)
+		ms += 20;
+	thread->wake_tick = ms == INFINITY ? INFINITY : tick + ms / 20;
 	thread->state = BLOCKED;
 
 	if(thread == get_current_thread())
@@ -232,7 +281,7 @@ dword resume_thread(TCB* block_queue, dword tid)
 	THREAD* p, * prev, * thread = NULL;
 
 	if (!block_queue)
-		block_queue = &block_tcb;
+		return -1;
 
 	p = prev = *block_queue;
 	while (p)
@@ -258,14 +307,37 @@ dword resume_thread(TCB* block_queue, dword tid)
 	thread->state = READY;
 }
 
+
+/*
+void do_wake_up()
+{
+	THREAD* thread = block_tcb, *prev;
+
+	while (thread)
+	{
+		if (thread->wake_tick == tick)
+			resume_thread(&block_tcb, thread->tid);
+		thread = thread->block_next;
+	}
+}
+*/
+
 /*	Choose the thread that has the highest tick count.
  * If all the threads have the same tick count, choose
  * the thread that is the first to be ready. If all the
  * tick count is 0, add the tick count according to thread's
  * priority and current state.
  */
+
+THREAD* select_thread(TCB* tcb)
+{
+
+}
+
 void schedule()
 {
+	static SPIN_LOCK lock = { 0 };
+
 	THREAD* thread, *next;
 	
 	if(get_current_thread()->state == READY)

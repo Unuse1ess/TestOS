@@ -36,7 +36,9 @@ static const SYS_SRV_ROUTINE sys_srv_tbl[] =
 void do_sys_call()
 {
 	THREAD_CONTEXT* regs = &rdy_thread->regs;
-	regs->eax = (*sys_srv_tbl[regs->eax])(regs->esp + 4);
+
+	if(regs->eax < sizeof(sys_srv_tbl) / sizeof(SYS_SRV_ROUTINE))
+		regs->eax = (*sys_srv_tbl[regs->eax])(regs->esp + 4);
 }
 
 void init_sys_call()

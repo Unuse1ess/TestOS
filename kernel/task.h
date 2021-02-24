@@ -30,6 +30,9 @@
 #define PRIORITY_ABOVE_NORMAL	8
 
 
+#define INFINITY	(-1U)
+
+
 #pragma pack(push, 1)
 
  /* Structure of task-state segment */
@@ -78,6 +81,7 @@ typedef struct _tagPROCESS
 {
 	PAGE_DIRECTORY_TABLE pdt_base;
 	dword pid;
+	dword start_tick;
 	struct _tagPROCESS* next;
 }PROCESS, *PCB;
 
@@ -93,6 +97,8 @@ typedef struct _tagTHREAD
 	dword tid;
 	dword count;
 	dword priority;
+
+	dword wake_tick;				/* Tell OS when to wake up */
 
 	struct _tagTHREAD* all_next;
 	struct _tagTHREAD* rdy_next;
@@ -117,9 +123,8 @@ extern void load_tr(word tr);
 extern void load_ldtr(word sel);
 
 /* Implemented in task.c */
-dword create_proc(void* start_addr);
-THREAD* create_thread(PROCESS* proc, void* start_addr);
-void init_context(THREAD* thread);
+dword create_proc(void* start_addr, dword priority);
+THREAD* create_thread(PROCESS* proc, dword priority, void* start_addr);
 void init_tss();
 void init_ldt();
 void schedule();

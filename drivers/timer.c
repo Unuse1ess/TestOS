@@ -17,8 +17,7 @@
 #include "../include/function.h"
 
 
-/* Private variables */
-static dword tick = 50;
+dword volatile tick = 0;
 
 static void do_timer();
 

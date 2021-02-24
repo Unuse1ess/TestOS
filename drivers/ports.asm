@@ -19,7 +19,7 @@ _port_byte_in:
 	mov dx, [esp + 4]
 	in al, dx
 	movzx eax, al
-
+	
 	ret
 
 ; Prototype: void port_byte_out(word port, byte data)
@@ -83,3 +83,4 @@ _port_buffer_out:
 	rep outsd
 
 	ret
+

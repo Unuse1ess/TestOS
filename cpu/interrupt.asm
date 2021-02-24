@@ -27,11 +27,11 @@ _isr_common_stub:
 	; Switch to kernel data segment selector.
 	; Notice that ss has been already changed to
 	; kernel data segment by CPU automatically.
-	mov ax, ss
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
+;	mov ax, ss
+;	mov ds, ax
+;	mov es, ax
+;	mov fs, ax
+;	mov gs, ax
 	
 	; esp is now the same as rdy_thread
 	call _isr_handler
@@ -40,7 +40,6 @@ _return_to_user:
 ; After every interrupt we need to send an EOI to the PICs
 ; or they will not send another interrupt again.
 	mov ecx, [esp + INT_NUM]
-
 	cmp ecx, 32
 	jb not_irq
 	cmp ecx, 47

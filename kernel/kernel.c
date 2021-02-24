@@ -25,6 +25,11 @@
 #include "../drivers/pci.h"
 
 
+__attribute__((section(".boot")))
+static byte boot_sect[512];
+
+struct _dummy {};
+
 /* Definition of OS information */
 word os_ver = MAKEWORD(MINOR_OS_VER, MAJOR_OS_VER);
 char os_name[] = OS_NAME;
@@ -37,7 +42,6 @@ void print_os_info()
 	kprintf("Welcome to %s\n", os_name);
 }
 
-void print_screen(char* str);
 void test()
 {
 	int i = 16, j = 0;
@@ -50,26 +54,27 @@ void test()
 
 void kernel_main()
 {
-	init_gdt();				/* Reinitialize GDT and GDTR */
-	init_tss();
+	init_gdt();
+	init_tss(); 
 	init_ldt();
 
 	init_apm();
 
-	init_interrupts();		/* Initialize IDT and IDTR, and enable interrupts */
-	init_sys_call();		/* Initialize system call */
+	init_interrupts();
+	init_sys_call();
 
-	init_memory();			/* Initialize memory information and enter page mode */
+	init_memory();
 
 	clear_screen();
 	print_os_info();
 
-//	checkAllBuses();
 	extern void test_A();
 	extern void test_B();
+	extern void test_C();
 
-//	create_proc(test);
-	create_proc((void*)test_A);
-	create_proc((void*)test_B);
+	create_proc((void*)test_A, PRIORITY_NORMAL);
+	create_proc((void*)test, PRIORITY_BELOW_NORMAL);
+	create_proc((void*)test_B, PRIORITY_BELOW_NORMAL);
+	create_proc((void*)test_C, PRIORITY_ABOVE_NORMAL);
 	schedule();
 }

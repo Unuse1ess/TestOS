@@ -17,7 +17,8 @@ ASM_OBJ = ${ASM_SOURCES:.asm=.o}
 OBJ = ${C_OBJ} ${ASM_OBJ}
 
 # Address of section
-SECTION_ADDR = -Ttext 0x1000 -Tdata 0x3E00 \
+SECTION_ADDR = -Ttext 0x1000 -Tdata 0x3F00 \
+				--section-start .boot=0x7C00 \
 				--section-start .PG_TBL=0x8000 \
 				--section-start .mmap=0xA000 \
 				--section-start .apm=0x500 \
@@ -41,8 +42,9 @@ kernel.bin: kernel.tmp
 
 # cpu/interrupt.o cpu/asm_gdt.o cpu/start_page.o
 # Temporary PE file of kernel code.
+# -b binary  --print-gc-sections
 kernel.tmp: boot/kernel_entry.o ${OBJ}
-	ld -o $@ ${SECTION_ADDR} $^
+	ld -s -S --gc-sections -o $@ ${SECTION_ADDR} $^
 
 # Used for debugging purposes
 kernel.elf: boot/kernel_entry.o ${OBJ}

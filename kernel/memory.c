@@ -15,6 +15,7 @@
 #include "../drivers/screen.h"
 #include "../include/stdlib.h"
 #include "../include/function.h"
+#include "spin_lock.h"
 #include "debug.h"
 
  /*					Physical memory distribution
@@ -43,7 +44,8 @@
   *		+-------------------------------------------------+
   *		|	0x2A000 ~ 0x9CFFF		Free memory			  |
   *		+-------------------------------------------------+
-  *		|	0x9D000 ~ 0x9EFFF		Kernel stack		  | 8KB is enough
+  *		|	0x9D000 ~ 0x9EFFF		Kernel stack(PE = 1)  | 8KB is enough
+  *		|							Boot sector (PE = 0)  | 
   *		+-------------------------------------------------+
   *		|	0x9F000 ~ 0x9FBFF		Not used			  |
   *		+-------------------------------------------------+
@@ -179,7 +181,7 @@ void init_memory()
 	 * even it is used by kernel.
 	 */
 	memset(kernel_page_dir_table, 0, SIZE_OF_PAGE_DIR_TABLE);
-	kernel_page_dir_table[0] = MAKE_PDT_ITEM(kernel_page_table, PAGE_USER | PAGE_PRESENT);
+	kernel_page_dir_table[0] = MAKE_PDT_ITEM(kernel_page_table, PAGE_USER | PAGE_PRESENT | PAGE_GLOBAL);
 
 	/* Point to itself to make it able to modify itself.
 	 * Therefore, it can be accessed through virtual address 0xFFFFF000.
@@ -205,6 +207,8 @@ void init_memory()
 /* Allocate a PHYSICAL page and return PHYSICAL address. */
 void* alloc_page(dword attr)
 {
+	static SPIN_LOCK lock;
+
 	int i, j, page_num, end;
 
 	if (attr == PAGE_USER)
@@ -219,6 +223,7 @@ void* alloc_page(dword attr)
 		end = 128;
 	}
 
+	spin_lock(&lock);
 	for (; i < end; i++)
 	{
 		/* Scanning by bytes instead of by bits */
@@ -230,6 +235,7 @@ void* alloc_page(dword attr)
 				if (is_page_free(page_num))
 				{
 					set_page(page_num, PAGE_USED);
+					spin_unlock(&lock);
 					return (void*)(page_num << 12);
 				}
 			}

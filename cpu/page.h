@@ -36,6 +36,8 @@
 #define PAGE_NOTDIRTY				0x00
 #define PAGE_DIRTY					0x40
 
+#define PAGE_GLOBAL					0x100
+
 
 #define GET_PAGE_TABLE_INDEX(addr)	((((dword)(addr) >> 22) & 0x3FF))
 #define GET_PAGE_TABLE_OFFSET(addr)	((((dword)(addr) >> 20) & 0x3FF))

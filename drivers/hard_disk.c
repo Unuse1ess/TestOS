@@ -25,7 +25,8 @@
 static void hd_request();
 
 static BOOL ready;
-
+static TCB hd_block_tcb;
+static TCB current;
 
 void init_hd()
 {
@@ -67,6 +68,9 @@ void pio_hd_read_sector(void* buffer, byte count, byte drive, byte sector, word 
 
 	for (i = 0; i < count; i++)
 	{
+		/*
+		suspend_thread(&hd_block_queue, get_current_thread(), INFINITY);
+		*/
 		do
 		{
 		//	state = port_byte_in(PIO_BASE_ADDR1 + 7);
