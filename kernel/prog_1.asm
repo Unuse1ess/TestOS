@@ -1,18 +1,27 @@
 [bits 32]
 
 global _test_A
-global _@1
 
 _test_A:
 	push ebp
 	mov ebp, esp
 
-	mov ebx, 0x400000 + string - _test_A
+	xor ecx, ecx
 
+	fldpi
+	fldpi
+	
+	push 0
+	mov ebx, 0x400000 + string - _test_A
 	push ebx
 @1:
-	mov eax, 1
-	int 0x80
+	inc ecx
+	cmp ecx, 0xf000000
+	jne @1
+	xor ecx, ecx
+
+	fmul st0, st1
+	fst dword [esp + 4]
 
 	call _print_screen
 	jmp @1
@@ -22,4 +31,5 @@ _print_screen:
 	int 0x80
 	ret
 	
-string: db 'a', 0, 0, 0
+string: db "Prog1: 0x%x", 10, 0
+

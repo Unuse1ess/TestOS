@@ -20,17 +20,16 @@ _start_paging:
 ; Enable global pages
 	mov eax, cr4
 	bts eax, 7				; Set PGE (bit 7)
-	; TODO: Enable PAE
+	; TODO: Enable PAE (bit 5)
 
 	mov cr4, eax
 
 	mov eax, cr0
 	bts eax, 31				; Set PG (bit 31), enable paging
-
+	
 ; Maximize the performance of processor by caching
-	btr eax, 30				; Clear CD (bit 30)
-	btr eax, 29				; Clear NW (bit 29)
 
+	and eax, ~0x60000000	; Clear CD (bit 30) and NW (bit 29)
 	mov cr0, eax
 	
 	ret
@@ -54,6 +53,7 @@ _get_cr3:
 
 ; Prototype: void _invalidate_page(void* v_addr);
 _invalidate_page:
-	invlpg [esp + 4]
+	mov eax, [esp + 4]
+	invlpg [eax]
 	ret
 

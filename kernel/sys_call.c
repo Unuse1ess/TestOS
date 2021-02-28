@@ -24,7 +24,7 @@ extern THREAD* rdy_thread;
 /* System service table */
 static const SYS_SRV_ROUTINE sys_srv_tbl[] =
 {
-	(SYS_SRV_ROUTINE)sys_print_screen,
+	(SYS_SRV_ROUTINE)sys_vprintf,
 	(SYS_SRV_ROUTINE)sys_get_tick,
 	NULL,
 };
@@ -37,14 +37,14 @@ void do_sys_call()
 {
 	THREAD_CONTEXT* regs = &rdy_thread->regs;
 
-	if(regs->eax < sizeof(sys_srv_tbl) / sizeof(SYS_SRV_ROUTINE))
+	if(LIKELY(regs->eax < sizeof(sys_srv_tbl) / sizeof(SYS_SRV_ROUTINE)))
 		regs->eax = (*sys_srv_tbl[regs->eax])(regs->esp + 4);
 }
 
 void init_sys_call()
 {
 	/* Fill the IDT and ISR table */
-	set_idt_gate(INT_SYSCALL, (dword)isr128);
+	set_idt_gate(INT_SYSCALL, (dword)isr128, INTERRUPT_GATE_386);
 	/* Enable code in user mode to be able to jump to kernel */
 	idt[INT_SYSCALL].access_authority |= DPL_RING3;
 	set_interrupt_handler(INT_SYSCALL, do_sys_call);

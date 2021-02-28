@@ -18,6 +18,6 @@
 void init_sys_call();
 
 /* Implemented is print_screen.asm */
-extern void sys_print_screen(char*);
+extern void sys_vprintf(char*);
 
 #endif

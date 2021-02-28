@@ -87,22 +87,27 @@ extern void irq15();
 /* System call*/
 extern void isr128();
 
+/* Used by user */
+extern void isr_not_used();
 
-#define INT_DIVERR				0
-#define INT_STEP_DEBUG			1
+
+#define INT_DE					0
+#define INT_DB					1
 #define INT_NMI					2
-#define INT_DEBUG				3
-#define INT_OVERFLOW			4
-#define INT_BOUND_CHECK			5
-#define INT_UNDEFINED_OPCODE	6
-#define INT_NO_FPU				7
-#define INT_DOUBLE_FAULTS		8
-//#define INT_			9
-#define INT_INVALID_TSS			10
-#define INT_SS_FAULT			11
-#define INT_SET_NOT_EXISTS		12
-#define INT_GENERAL_PROTECTION	13
-#define INT_PAGE_FAULT			14
+#define INT_BP					3
+#define INT_OF					4
+#define INT_BR					5
+#define INT_UD					6
+#define INT_NM					7
+#define INT_DF					8
+// reserved
+#define INT_TS					10
+#define INT_NP					11
+#define INT_SS					12
+#define INT_GP					13
+#define INT_PF					14
+// reserved
+#define INT_MF					16
 
 /* System call */
 #define INT_SYSCALL				0x80
@@ -127,6 +132,6 @@ extern void isr128();
 
 typedef void (CALLBACK *ISR_HANDLER)();
 
-void set_interrupt_handler(byte n, ISR_HANDLER handler);
+void set_interrupt_handler(byte, ISR_HANDLER);
 
 #endif

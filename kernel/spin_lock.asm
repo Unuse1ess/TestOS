@@ -5,8 +5,8 @@
 ;-------------------------------------------------------
 [bits 32]
 
-global _spin_lock
-global _spin_unlock
+global _spin_lock_
+global _spin_unlock_
 
 
 ; Spin lock implemented in assembly for stability and efficiency.

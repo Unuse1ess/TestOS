@@ -23,6 +23,7 @@
 #include "../drivers/hard_disk.h"
 #include "../drivers/rtc.h"
 #include "../drivers/pci.h"
+#include "../cpu/math.h"
 
 
 __attribute__((section(".boot")))
@@ -42,15 +43,6 @@ void print_os_info()
 	kprintf("Welcome to %s\n", os_name);
 }
 
-void test()
-{
-	int i = 16, j = 0;
-
-	i /= j;
-
-	while (1);
-}
-
 
 void kernel_main()
 {
@@ -65,6 +57,8 @@ void kernel_main()
 
 	init_memory();
 
+	init_fpu();
+
 	clear_screen();
 	print_os_info();
 
@@ -72,8 +66,8 @@ void kernel_main()
 	extern void test_B();
 	extern void test_C();
 
+
 	create_proc((void*)test_A, PRIORITY_NORMAL);
-	create_proc((void*)test, PRIORITY_BELOW_NORMAL);
 	create_proc((void*)test_B, PRIORITY_BELOW_NORMAL);
 	create_proc((void*)test_C, PRIORITY_ABOVE_NORMAL);
 	schedule();

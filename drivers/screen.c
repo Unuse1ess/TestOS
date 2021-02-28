@@ -203,6 +203,14 @@ int kprintf(char* fmt, ...)
 	return ret;
 }
 
+void kvprintf(char* fmt, va_list args)
+{
+	char buffer[128];
+
+	vsnprintf(buffer, 128, fmt, args);
+	kprint(buffer);
+}
+
 int kputchar(int ch)
 {
 	char str[2];

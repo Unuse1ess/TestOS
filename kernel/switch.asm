@@ -22,6 +22,9 @@
 ; Defined in task.c
 [extern _rdy_thread]
 
+; Defined in math.asm
+[extern _set_ts]
+
 global _switch_to
 
 ; Prototype: void switch_to(THREAD* next);
@@ -53,6 +56,9 @@ _switch_to:
 
 ; Change current running thread
 	mov [_rdy_thread], ecx
+
+; Set the TS bit in cr0
+	call _set_ts
 
 ; Restore kernel context
 	pop edi

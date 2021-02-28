@@ -223,7 +223,7 @@ void* alloc_page(dword attr)
 		end = 128;
 	}
 
-	spin_lock(&lock);
+//	spin_lock(&lock);
 	for (; i < end; i++)
 	{
 		/* Scanning by bytes instead of by bits */
@@ -235,7 +235,7 @@ void* alloc_page(dword attr)
 				if (is_page_free(page_num))
 				{
 					set_page(page_num, PAGE_USED);
-					spin_unlock(&lock);
+				//	spin_unlock(&lock);
 					return (void*)(page_num << 12);
 				}
 			}
@@ -307,13 +307,6 @@ void vfree_page(void* vptr)
 }
 
 
-/* Handler of fault general protection */
-void CALLBACK handle_gp(THREAD_CONTEXT* regs)
-{
-	UNUSED(regs);
-	kprintf("General protection!\neip: 0x%X\nErr code: %d\n", regs->eip, regs->err_code);
-}
-
 /* Handler of page fault */
 /*
 err_code:
@@ -322,19 +315,19 @@ err_code:
 |   Reserved   | I | R | U | W | P |
 +--------------+---+---+---+---+---+
 */
-void CALLBACK handle_pf(THREAD_CONTEXT* regs)
+void CALLBACK handle_pf()
 {
-	UNUSED(regs);
+	THREAD_CONTEXT* regs = &get_current_thread()->regs;
 
 	/* TODO: Do swap in */
 
 	kprintf("Page fault!\n");
+	kprintf("PID: %d\n", get_current_process()->pid);
+	kprintf("Thread ID: %d\n", get_current_thread()->tid);
 	kprintf("Error code: %bB\n", regs->err_code);
 	kprintf("Address: 0x%p\n", get_page_fault_addr());
 	kprintf("CR3: 0x%p\n", get_cr3());
 	kprintf("eip: 0x%p\n", regs->eip);
-
-	while (1);
 }
 
 

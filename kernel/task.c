@@ -12,9 +12,9 @@
 #include "../cpu/page.h"
 #include "memory.h"
 #include "task.h"
+#include "../cpu/math.h"
 #include "spin_lock.h"
 #include "../include/stdlib.h"
-
 
 
  /* eflags initial value for a task.
@@ -25,6 +25,9 @@
   */
 
 #define TASK_EFLAGS			0x0202
+
+/* Trap flag, used to single step executing the program */
+#define EFLAG_TF			0x0100
 
   /* Virtual address */
 #define DEFAULT_EIP		0x400000
@@ -59,11 +62,13 @@ TCB all_tcb;
 TCB rdy_tcb;
 TCB block_tcb;
 THREAD* rdy_thread;						/* Next task to run */
+THREAD* last_used_fpu = NULL;
 
 SEGMENT_DESCRIPTOR ldt[2];
 word ldtr;
 
 void init_context(THREAD* thread);
+
 
 
 void init_ldt()
@@ -104,6 +109,9 @@ void init_tss()
 	tr = add_tss_descriptor(&tss, sizeof(TASK_STATE_SEGMENT) - 1);
 	load_tr(tr);
 }
+
+
+/*-------------------------Process & Thread Part-------------------------*/
 
 /* Only copy caller thread */
 //dword sys_fork()
@@ -165,9 +173,9 @@ dword create_proc(void* start_addr, dword priority)
 	proc->start_tick = tick;
 	proc->next = pcb;
 
-	spin_lock(&lock);
+//	spin_lock(&lock);
 	pcb = proc;
-	spin_unlock(&lock);
+//	spin_unlock(&lock);
 
 	/* Create main thread */
 	create_thread(proc, priority, start_addr);
@@ -176,6 +184,7 @@ dword create_proc(void* start_addr, dword priority)
 
 	return proc->pid;
 }
+
 
 THREAD* create_thread(PROCESS* proc, dword priority,void* start_addr)
 {
@@ -195,12 +204,12 @@ THREAD* create_thread(PROCESS* proc, dword priority,void* start_addr)
 	thread->tid = (dword)p >> 12;
 	thread->pdt_base = proc->pdt_base;
 
-	spin_lock(&lock);
+//	spin_lock(&lock);
 	thread->all_next = all_tcb;
 	all_tcb = thread;
 	thread->rdy_next = rdy_tcb;
 	rdy_tcb = thread;
-	spin_unlock(&lock);
+//	spin_unlock(&lock);
 
 	/* Allocate user stack at user space */
 	p = alloc_page(PAGE_USER);
@@ -307,7 +316,6 @@ dword resume_thread(TCB* block_queue, dword tid)
 	thread->state = READY;
 }
 
-
 /*
 void do_wake_up()
 {
@@ -321,6 +329,138 @@ void do_wake_up()
 	}
 }
 */
+
+/*-------------------------Fault Handlers Part-------------------------*/
+/* Unhandled exceptions are unlikely raised by CPU so far. */
+
+extern void kprintf(char*, ...);
+
+/* Handler of #DE(0) (Divide Error Fault) */
+void CALLBACK handle_de()
+{
+	kprintf("Divided by zero!\n");
+	kprintf("PID: %d\n", get_current_process()->pid);
+	kprintf("Thread ID: %d\n", get_current_thread()->tid);
+}
+
+/* Handler of #DB(1) (Debug Break Point Trap, Single Step) */
+void CALLBACK handle_db()
+{
+	kprintf("\nSingle Step Break Point!\n");
+	kprintf("PID: %d\n", get_current_process()->pid);
+	kprintf("Thread ID: %d\n", get_current_thread()->tid);
+}
+
+/* NMI(2) */
+
+/* Handler of #BP(3) (Debug Break Point Trap) */
+void CALLBACK handle_bp()
+{
+	kprintf("\nDebug Break Point!\n");
+	kprintf("PID: %d\n", get_current_process()->pid);
+	kprintf("Thread ID: %d\n", get_current_thread()->tid);
+}
+
+/* Handler of #OF(4) (Overflow Trap) */
+void CALLBACK handle_of()
+{
+	kprintf("Overflow!\n");
+	kprintf("PID: %d\n", get_current_process()->pid);
+	kprintf("Thread ID: %d\n", get_current_thread()->tid);
+}
+
+/* Handler of #BR(5) (BOUND Range Exceeded Fault) */
+void CALLBACK handle_br()
+{
+	kprintf("BOUND Range Exceeded!\n");
+	kprintf("PID: %d\n", get_current_process()->pid);
+	kprintf("Thread ID: %d\n", get_current_thread()->tid);
+}
+
+/* Handler of #UD(6) (Invalid Opcode Fault) */
+void CALLBACK handle_ud()
+{
+	kprintf("Invalid Opcode!\n");
+	kprintf("PID: %d\n", get_current_process()->pid);
+	kprintf("Thread ID: %d\n", get_current_thread()->tid);
+}
+
+/* Handler of #NM(7) (Device Not Available Fault) */
+/* All threads do not used FPU when created.
+ * And when the first thread that uses FPU, TS is
+ * set in advance, so #NM will be raised.
+ * Thus, when a thread wants to execute x87 instructions,
+ * #NM is raised, and at this point OS should save the
+ * FPU context if it is not the first thread to use.
+ * Then check if current thread has used FPU before,
+ * and restore FPU or initialize FPU accordingly.
+ */
+void CALLBACK handle_nm()
+{
+	/* Clear TS FIRSTLY or it will raise #NM again */
+	clear_ts();
+	
+	if (LIKELY(last_used_fpu))
+		save_fpu_context(&last_used_fpu->fpu_regs);
+
+
+	if (get_current_thread()->used_fpu)
+	{
+		/* Not the first time using FPU */
+		restore_fpu_context(&get_current_thread()->fpu_regs);
+	}
+	else
+	{
+		/* The first time using FPU */
+		get_current_thread()->used_fpu = TRUE;
+		reinit_fpu();
+	}
+
+	last_used_fpu = get_current_thread();
+}
+
+/* #DF(8) (Double Fault Abort) */
+/* 9 reserved */
+/* #TS(10) (Invalid TSS Fault) */
+/* #NP(11) (Segment Not Present Fault) */
+/* #SS(12) (Stack Fault) */
+
+
+/* Handler of #GP(13) (General Protection Fault) */
+/* General protection fault, as its name, is
+ * really general, even if you just write something
+ * wrong to some bits of control registers. XD
+ */
+void CALLBACK handle_gp()
+{
+	THREAD_CONTEXT* regs = &get_current_thread()->regs;
+
+	kprintf("General protection!\n");
+	kprintf("eip: 0x%X\nErr code: %d\n", regs->eip, regs->err_code);
+	kprintf("PID: %d\n", get_current_process()->pid);
+	kprintf("Thread ID: %d\n", get_current_thread()->tid);
+}
+
+/* Handler of #PF(14) (Page Fault) is placed at memory.c */
+/* 15 is reserved */
+
+/* Handler of #MF(16) (FPU Error Fault) */
+/* To be honest, I am not sure about how it trigger. */
+void CALLBACK handle_mf()
+{
+	kprintf("FPU Error!\n");
+	kprintf("PID: %d\n", get_current_process()->pid);
+	kprintf("Thread ID: %d\n", get_current_thread()->tid);
+}
+
+/* #AC(17) (Alignment Check Fault) */
+/* #MC(18) (Machine Check Abort) */
+/* #XM(19) (SIMD Floating-Point Fault) */
+/* 20 ~ 31 are reserved */
+
+
+
+/*---------------------------Schedulor Part---------------------------*/
 
 /*	Choose the thread that has the highest tick count.
  * If all the threads have the same tick count, choose

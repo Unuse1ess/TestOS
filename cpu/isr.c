@@ -34,17 +34,20 @@ void set_interrupt_handler(byte n, ISR_HANDLER handler)
 
 void isr_handler()
 {
-	THREAD_CONTEXT* r = &rdy_thread->regs;
-
+	THREAD_CONTEXT* r = &get_current_thread()->regs;
 
 	if (interrupt_handlers[r->int_no] != 0)
 	{
-		(*interrupt_handlers[r->int_no])(r);
+		(*interrupt_handlers[r->int_no])();
 	}
 	else if(r->int_no > 47)
 	{
-		kprintf("received interrupt: 0x%X\n", r->int_no);
+		kprintf("Received interrupt: 0x%X\n", r->int_no);
 		kprintf("eip: 0x%X\n", r->eip);
 		while (1);
+	}
+	else
+	{
+		kprintf("Unknown interrupt: %d\n", r->int_no);
 	}
 }

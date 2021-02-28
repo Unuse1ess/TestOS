@@ -63,39 +63,39 @@
 //	return i;
 //}
 
-void up(SEMAPHORE* sema)
-{
-	spin_lock(&sema->lock);
-	sema->value++;
-	spin_unlock(&sema_pool[i].lock);
-
-	/* See if there is some threads waiting for it.
-	 * If the value is not positive, producer(s)
-	 * is waiting to be consumed.
-	 */
-	if (sema->value <= 0)
-	{
-		/* TODO: Wake up threads in wait queue */
-		
-	}
-}
-
-void down(SEMAPHORE* sema)
-{
-	spin_lock(&sema->lock);
-	sema->value--;
-	spin_unlock(sema->lock);
-
-	if (sema->value <= 0)
-	{
-		/* TODO: Suspend current thread by:
-		 *	1) Adding it to sema's wait queue.
-		 *	2) Switch to other available thread.
-		 */
-
-		 /* Once it resumes, it starts running from here.
-		  * That means consumer(s) has finished consumption,
-		  * and the protected shared resources are now available.
-		  */
-	}
-}
+//void up(SEMAPHORE* sema)
+//{
+//	spin_lock(&sema->lock);
+//	sema->value++;
+//	spin_unlock(&sema_pool[i].lock);
+//
+//	/* See if there is some threads waiting for it.
+//	 * If the value is not positive, producer(s)
+//	 * is waiting to be consumed.
+//	 */
+//	if (sema->value <= 0)
+//	{
+//		/* TODO: Wake up threads in wait queue */
+//		
+//	}
+//}
+//
+//void down(SEMAPHORE* sema)
+//{
+//	spin_lock(&sema->lock);
+//	sema->value--;
+//	spin_unlock(sema->lock);
+//
+//	if (sema->value <= 0)
+//	{
+//		/* TODO: Suspend current thread by:
+//		 *	1) Adding it to sema's wait queue.
+//		 *	2) Switch to other available thread.
+//		 */
+//
+//		 /* Once it resumes, it starts running from here.
+//		  * That means consumer(s) has finished consumption,
+//		  * and the protected shared resources are now available.
+//		  */
+//	}
+//}
