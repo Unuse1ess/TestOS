@@ -6,40 +6,24 @@
 
 %include "kernel/sconst.inc"
 
-global _return_to_user
+; Total size of general purpose registers
+SIZE_OF_GPR equ 32
+
+global _return_from_interrupt
 
 [bits 32]
 
 ; Defined in isr.c
 [extern _isr_handler]
 
-; Common ISR codes
-_isr_common_stub:
-	; Save context in kernel thread's stack.
-	; We use esp0 in TSS to make esp points to
-	; kernel stack when interrupt happened.
-	pushad
-	push ds
-	push es
-	push fs
-	push gs
+; Defined in task.c
+[extern _rdy_thread]
 
-	; Switch to kernel data segment selector.
-	; Notice that ss has been already changed to
-	; kernel data segment by CPU automatically.
-;	mov ax, ss
-;	mov ds, ax
-;	mov es, ax
-;	mov fs, ax
-;	mov gs, ax
-	
-	; esp is now the same as rdy_thread
-	call _isr_handler
+last_int_no: dd 128
 
-_return_to_user:
-; After every interrupt we need to send an EOI to the PICs
-; or they will not send another interrupt again.
-	mov ecx, [esp + INT_NUM]
+
+_send_EOI:
+	mov ecx, [last_int_no]
 	cmp ecx, 32
 	jb not_irq
 	cmp ecx, 47
@@ -54,9 +38,47 @@ _return_to_user:
 
 not_slave:
 	out 0x20, al
-
+	
 not_irq:
+	ret
 
+
+
+; Common ISR codes
+_isr_common_stub:
+	; Save context in kernel thread's stack.
+	; We use esp0 in TSS to make esp points to
+	; kernel stack when interrupt happened.
+	pushad
+	push ds
+	push es
+	push fs
+	push gs
+
+	; Don't use segment selector to judge,
+	; for we won't do any change by software,
+	; such as ds <- ss. There are many problems
+	; on it. And the simplest way is using
+	; rdy_thread to reference nest_num.
+	mov ebx, [_rdy_thread]
+	mov eax, [ebx + INT_NUM]
+	mov [last_int_no], eax
+	
+	; Interrupt at kernel, must be a hardware interrupt.
+	; We should handle it carefully, for ss and esp are not
+	; pushed into the stack when privilege is not changed.
+;	cmp ebx, esp
+;	je from_ring0
+
+
+from_ring0:
+	call _send_EOI
+	call _isr_handler
+	
+; After every interrupt we need to send an EOI to the PICs
+; or they will not send another interrupt again.
+
+_return_from_interrupt:
 	; Return from interrupt
 	pop gs
 	pop fs
@@ -445,7 +467,6 @@ _irq15:
 
 ; System call
 _isr128:
-	
 	push 0
 	push 128
 	jmp _isr_common_stub

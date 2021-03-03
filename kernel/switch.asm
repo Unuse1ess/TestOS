@@ -42,8 +42,8 @@ _switch_to:
 	mov [eax + KERNEL_ESP], esp
 
 ; Change the interrupt number to decide if it needs to send EOI
-	mov eax, [eax + INT_NUM]
-	mov [ecx + INT_NUM], eax
+;	mov eax, [eax + INT_NUM]
+;	mov [ecx + INT_NUM], eax
 
 ; Change the page directory table
 	mov eax, [ecx + T_CR3REG]

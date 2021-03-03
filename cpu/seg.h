@@ -211,7 +211,7 @@ typedef struct
 #pragma pack(pop)
 
 /* Functions implemented in idt.c */
-void set_idt_gate(int n, dword handler, dword type);
+void set_idt_gate(int n, dword handler);
 void set_idt();
 
 

@@ -138,6 +138,7 @@ typedef struct _tagTHREAD
 	PROCESS* proc;					/* Process that the thread belongs to */
 	dword kernel_esp;				/* Points to inner of kernel stack */
 	PAGE_DIRECTORY_TABLE pdt_base;	/* The same as proc->pdt_base */
+	volatile dword nest_num;		/* Count of nested interrupts */
 
 	FLOATING_POINT_CONTEXT fpu_regs;/* Used if fpu is used in the thread */
 	dword used_fpu;					/* Indicate if the thread uses FPU */
@@ -165,7 +166,7 @@ typedef struct _tagTHREAD
  
 /* Implemented in switch.asm */
 extern void switch_to(THREAD* thread);
-extern void return_to_user();
+extern void return_from_interrupt();
 
 /* Implemented in loar_tr.asm */
 extern void load_tr(word tr);

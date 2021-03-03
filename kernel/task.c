@@ -225,12 +225,35 @@ THREAD* create_thread(PROCESS* proc, dword priority,void* start_addr)
 
 	init_context(thread);
 	thread->state = READY;
+
+	/* TEST */
+	valloc_page(0x800000, 0x800000, PAGE_USER | PAGE_PRESENT | PAGE_READ_WRITE);
 }
+
+
+/*		Constructed Stack Frame
+ *	+---------------------------+ <= kernel_esp
+ *	|			k_edi			|
+ *	+---------------------------+
+ *	|			k_esi			|
+ *	+---------------------------+
+ *	|			k_ebx			|
+ *	+---------------------------+
+ *	|			k_ebp			|
+ *	+---------------------------+
+ *	|		eip (ret_addr)		| Where ret_addr == return_to_user
+ *	+---------------------------+ <= thread
+ *	|		context...			|
+ *	+---------------------------+
+ * 
+ *	Note that four values above eip is useless,
+ *	and just for stack balancing in switch().
+ */
 
 void init_context(THREAD* thread)
 {
-	/* Construct stack frame */
-	*(dword*)((dword)thread - 4) = (dword)return_to_user;
+	/* Construct stack frame as above */
+	*(dword*)((dword)thread - 4) = (dword)return_from_interrupt;
 	thread->kernel_esp = ((dword)thread - 20);
 
 	/* Initialize segment selector */
@@ -244,6 +267,7 @@ void init_context(THREAD* thread)
 	thread->regs.eip = DEFAULT_EIP;
 	thread->regs.esp = DEFAULT_ESP;
 	thread->regs.eflags = TASK_EFLAGS;
+	thread->regs.int_no = 128;		/* Seems like returning from system call */
 }
 
 

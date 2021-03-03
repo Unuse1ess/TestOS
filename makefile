@@ -17,7 +17,7 @@ ASM_OBJ = ${ASM_SOURCES:.asm=.o}
 OBJ = ${C_OBJ} ${ASM_OBJ}
 
 # Address of section
-SECTION_ADDR = -Ttext 0x1000 -Tdata 0x4500 \
+SECTION_ADDR = -Ttext 0x1000 -Tdata 0x4600 \
 				--section-start .idata=0x7000 \
 				--section-start .boot=0x7C00 \
 				--section-start .PG_TBL=0x8000 \
@@ -30,7 +30,7 @@ SECTION_ADDR = -Ttext 0x1000 -Tdata 0x4500 \
 CC = gcc
 GDB = gdb
 # -g: Use debugging symbols in gcc
-CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs \
+CFLAGS = -g -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs \
 #		 -Wall -Wextra -Werror
 
 # First rule is run by default

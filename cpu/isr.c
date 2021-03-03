@@ -14,6 +14,10 @@
 #include "../drivers/ports.h"
 #include "../include/stdlib.h"
 
+
+#define enable_interrupt() __asm("sti")
+#define disable_interrupt() __asm("cli")
+
 /*	When CPU received interrupt:
  *	1. Find ISR according to the IDT according to interrupt number.
  *	2. Turn to execute the ISR which is written in interrupt.asm.
@@ -36,8 +40,24 @@ void isr_handler()
 {
 	THREAD_CONTEXT* r = &get_current_thread()->regs;
 
-	if (interrupt_handlers[r->int_no] != 0)
+	get_current_thread()->nest_num++;
+
+	//switch (r->int_no)
+	//{
+	////case INT_DE:
+	////case INT_BP:
+	////case INT_OF:
+	////case INT_BR:
+	//case INT_SYSCALL:
+	//	enable_interrupt();
+
+	//default:
+	//	break;
+	//}
+
+	if (LIKELY(interrupt_handlers[r->int_no] != 0))
 	{
+		//kprintf("Received interrupt: 0x%X, nest_num: %d\n", r->int_no, get_current_thread()->nest_num);
 		(*interrupt_handlers[r->int_no])();
 	}
 	else if(r->int_no > 47)
@@ -50,4 +70,6 @@ void isr_handler()
 	{
 		kprintf("Unknown interrupt: %d\n", r->int_no);
 	}
+
+	get_current_thread()->nest_num--;
 }

@@ -17,7 +17,7 @@
 #include "../include/function.h"
 
 
-dword volatile tick = 0;
+volatile dword tick = 0;
 
 static void do_timer();
 
@@ -51,6 +51,9 @@ dword sys_get_tick()
 static void do_timer()
 {
 	tick++;
+	//if (get_current_thread()->nest_num != 1)
+	//	return;
+
 	/* TODO: Clear the accessed bit of pages and add references. */
 	schedule();
 }

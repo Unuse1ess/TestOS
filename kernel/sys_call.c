@@ -16,16 +16,24 @@
 #include "sys_call.h"
 
 
+
 typedef dword (*SYS_SRV_ROUTINE)(dword);
 
 extern THREAD* rdy_thread;
 
+void sys_test_int()
+{
+	kprint("test interrupt trigger!\n");
+	for (;;)
+		__asm("sti");
+}
 
 /* System service table */
 static const SYS_SRV_ROUTINE sys_srv_tbl[] =
 {
 	(SYS_SRV_ROUTINE)sys_vprintf,
 	(SYS_SRV_ROUTINE)sys_get_tick,
+	(SYS_SRV_ROUTINE)sys_test_int,
 	NULL,
 };
 
@@ -33,6 +41,7 @@ static const SYS_SRV_ROUTINE sys_srv_tbl[] =
  * When it returns from the function, regs->eax should contains the return
  * value, if it is applicable.
  */
+
 void do_sys_call()
 {
 	THREAD_CONTEXT* regs = &rdy_thread->regs;
@@ -44,7 +53,7 @@ void do_sys_call()
 void init_sys_call()
 {
 	/* Fill the IDT and ISR table */
-	set_idt_gate(INT_SYSCALL, (dword)isr128, INTERRUPT_GATE_386);
+	set_idt_gate(INT_SYSCALL, (dword)isr128);
 	/* Enable code in user mode to be able to jump to kernel */
 	idt[INT_SYSCALL].access_authority |= DPL_RING3;
 	set_interrupt_handler(INT_SYSCALL, do_sys_call);

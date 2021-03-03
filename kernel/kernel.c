@@ -24,6 +24,7 @@
 #include "../drivers/rtc.h"
 #include "../drivers/pci.h"
 #include "../cpu/math.h"
+#include "spin_lock.h"
 
 
 __attribute__((section(".boot")))
@@ -34,7 +35,6 @@ struct _dummy {};
 /* Definition of OS information */
 word os_ver = MAKEWORD(MINOR_OS_VER, MAJOR_OS_VER);
 char os_name[] = OS_NAME;
-
 
 void print_os_info()
 {
@@ -50,7 +50,7 @@ void kernel_main()
 	init_tss(); 
 	init_ldt();
 
-	init_apm();
+//	init_apm();
 
 	init_interrupts();
 	init_sys_call();
@@ -66,9 +66,8 @@ void kernel_main()
 	extern void test_B();
 	extern void test_C();
 
-
 	create_proc((void*)test_A, PRIORITY_NORMAL);
-	create_proc((void*)test_B, PRIORITY_BELOW_NORMAL);
-	create_proc((void*)test_C, PRIORITY_ABOVE_NORMAL);
+//	create_proc((void*)test_B, PRIORITY_NORMAL);
+//	create_proc((void*)test_C, PRIORITY_NORMAL);
 	schedule();
 }

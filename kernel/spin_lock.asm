@@ -5,9 +5,8 @@
 ;-------------------------------------------------------
 [bits 32]
 
-global _spin_lock_
-global _spin_unlock_
-
+global _spin_lock
+global _spin_unlock
 
 ; Spin lock implemented in assembly for stability and efficiency.
 ; Note that it is only used in kernel and for critical section
@@ -22,7 +21,8 @@ _spin_lock:
 	mov eax, 1
 
 locked:
-	cmp dword [esp + 4], 0
+	mov ecx, [esp + 4]
+	cmp dword [ecx], 0
 	jz get_lock
 
 ; To tell the processor that it is a spin lock to improve its performance.
@@ -31,9 +31,9 @@ locked:
 	jmp locked
 
 get_lock:
-	xchg eax, [esp + 4]
+	xchg eax, [ecx]
 	test eax, eax			; See if there is someone else changing the lock in advance
-	jnz locked				; ZF == 1 indicates that someone has changed
+	jnz locked				; ZF == 0 indicates that someone has changed
 							; and is using the lock, so spin again.
 	
 	ret
@@ -41,6 +41,7 @@ get_lock:
 ; Prototype: int spin_unlock(SPIN_LOCK* lock);
 _spin_unlock:
 	xor eax, eax
-	xchg eax, [esp + 4]
+	mov ecx, [esp + 4]
+	xchg eax, [ecx]
 	dec eax				; Trying to unlock an unlocked spin lock will return -1,
 	ret					; and if everything is right, it returns 0.
