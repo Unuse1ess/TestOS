@@ -5,8 +5,8 @@ global _test_C
 _test_lock equ 0x800100
 
 _test_C:
-	mov eax, 2
-	int 0x80
+;	mov eax, 2
+;	int 0x80
 
 	mov esi, 3
 

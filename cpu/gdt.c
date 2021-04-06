@@ -16,7 +16,7 @@ extern void reload_gdtr(GDTR* p);
 static SEGMENT_DESCRIPTOR gdt[NUM_OF_GDT_DESC];
 static GATE_DESCRIPTOR* gate_desc_tbl;
 static GDTR gdtr;
-static word avl_gdt_index;
+static u16 avl_gdt_index;
 
 
 /* Public functions */
@@ -26,7 +26,7 @@ void init_gdt()
 {
 	avl_gdt_index = 3;
 
-	gdtr.base = (dword)&gdt;
+	gdtr.base = (u32*)&gdt;
 	gdtr.limit = sizeof(gdt) - 1;
 
 	reload_gdtr(&gdtr);
@@ -34,7 +34,7 @@ void init_gdt()
 }
 
 /* Add a descriptor to GDT and return the selector */
-word add_global_descriptor(void* seg_base, dword seg_limit, byte authority, byte attr)
+u16 add_global_descriptor(void* seg_base, u32 seg_limit, u8 authority, u8 attr)
 {
 	if (avl_gdt_index > NUM_OF_GDT_DESC)
 		return 0;
@@ -58,21 +58,21 @@ word add_global_descriptor(void* seg_base, dword seg_limit, byte authority, byte
 }
 
 /* Add a LDT descriptor to GDT and return the selector */
-word add_ldt_descriptor(void* seg_base, dword seg_limit)
+u16 add_ldt_descriptor(void* seg_base, u32 seg_limit)
 {
 	return add_global_descriptor(seg_base, seg_limit,
 		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | LDT_DESCRIPTOR, SA_USE_32BITS);
 }
 
 /* Add a TSS descriptor to GDT and return the selector */
-word add_tss_descriptor(void* seg_base, dword seg_limit)
+u16 add_tss_descriptor(void* seg_base, u32 seg_limit)
 {
 	return add_global_descriptor(seg_base, seg_limit - 1,
 		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | AVAILABLE_386TSS, SA_USE_32BITS);
 }
 
 /* Add a call gate to GDT and return the selector */
-word add_gate_descriptor(word seg_sel, dword offset, byte authority, byte param_cnt)
+u16 add_gate_descriptor(u16 seg_sel, u32 offset, u8 authority, u8 param_cnt)
 {
 	if (avl_gdt_index > NUM_OF_GDT_DESC)
 		return 0;
@@ -93,19 +93,19 @@ word add_gate_descriptor(word seg_sel, dword offset, byte authority, byte param_
 }
 
 /* Get the logical address in the descriptor */
-dword get_desc_base_addr(word sel)
+u32 get_desc_base_addr(u16 sel)
 {
-	word index = sel >> 3;
+	u16 index = sel >> 3;
 
-	return (dword)gdt[index].seg_base_high << 24 |
-		(dword)gdt[index].seg_base_mid << 16 |
-		(dword)gdt[index].seg_base_low;
+	return (u32)gdt[index].seg_base_high << 24 |
+		(u32)gdt[index].seg_base_mid << 16 |
+		(u32)gdt[index].seg_base_low;
 }
 
 /* Set new logical address in the descriptor */
-void set_desc_base_addr(word sel, void* new_addr)
+void set_desc_base_addr(u16 sel, void* new_addr)
 {
-	word index = sel >> 3;
+	u16 index = sel >> 3;
 
 	if (index >= avl_gdt_index)
 		return;

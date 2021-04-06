@@ -24,6 +24,6 @@
 
 /* Implemented in msr.asm */
 extern void read_msr(uint32 address, uint64* value);
-extern void write_msr(uint32 address, uint32 low, uint32 high);
+extern void write_msr(uint32 address, uint64 value);
 
 #endif

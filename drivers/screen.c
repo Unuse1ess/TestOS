@@ -156,7 +156,7 @@ void kprint(char* str)
 			memset_w((word*)p, DEFAULT_BG, SCREEN_MAX_COLS);
 			scroll_screen(offset - SIZE_OF_VIDEO_MEM ? offset - SIZE_OF_VIDEO_MEM : 1);
 
-			/* Set pointer of next character*/
+			/* Set pointer of next character */
 			x = GET_OFFSET_X(offset);
 			offset = GET_OFFSET(x - 1, SCREEN_MAX_ROWS - 1);
 			vm = VIDEO_ADDRESS + offset;

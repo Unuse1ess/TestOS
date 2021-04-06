@@ -16,6 +16,10 @@
 #include "spin_lock.h"
 #include "../include/stdlib.h"
 
+/* In our design, system page cannot be swapped out,
+ * so PID and TID is computed from physical page address.
+ */
+
 
  /* eflags initial value for a task.
   * This value means, IOPL = 0, IF = 1.
@@ -36,7 +40,7 @@
 
 
 /* Defined in timer.c */
-extern dword tick;
+extern u32 tick;
 
 /* Defined in memory.c.
  * Every process's PDT should copy from kernel's one to
@@ -49,7 +53,7 @@ extern PAGE_ITEM kernel_page_dir_table[1024];
  * a common TSS for all the tasks, and no need to switch tr.
  */
 TASK_STATE_SEGMENT tss;
-static word tr;
+static u16 tr;
 
 PCB pcb;
 
@@ -64,8 +68,9 @@ TCB block_tcb;
 THREAD* rdy_thread;						/* Next task to run */
 THREAD* last_used_fpu = NULL;
 
+
 SEGMENT_DESCRIPTOR ldt[2];
-word ldtr;
+u16 ldtr;
 
 void init_context(THREAD* thread);
 
@@ -114,14 +119,14 @@ void init_tss()
 /*-------------------------Process & Thread Part-------------------------*/
 
 /* Only copy caller thread */
-//dword sys_fork()
+//u32 sys_fork()
 //{
 //	PROCESS* proc;
 //	THREAD* thread;
 //	void* p, * cr3, * old_cr3;
 //
 //	cr3 = alloc_page(PAGE_SYSTEM);
-//	valloc_page((dword)cr3, (dword)cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+//	valloc_page((u32)cr3, (u32)cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
 //	memcpy(cr3, (void*)0xFFC00000, SIZE_OF_PAGE);
 //	((PAGE_DIRECTORY_TABLE)cr3)[1023] = MAKE_PDT_ITEM(cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
 //
@@ -130,11 +135,11 @@ void init_tss()
 //	set_cr3(cr3);
 //
 //	p = alloc_page(PAGE_SYSTEM);
-//	proc = valloc_page((dword)p, (dword)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+//	proc = valloc_page((u32)p, (u32)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
 //	memset(proc, 0, SIZE_OF_PAGE);
 //
 //	proc->pdt_base = (PAGE_DIRECTORY_TABLE)cr3;
-//	proc->pid = (dword)proc >> 12;
+//	proc->pid = (u32)proc >> 12;
 //	proc->next = pcb;
 //	pcb = proc;
 //
@@ -146,7 +151,7 @@ void init_tss()
 //	return proc->pid;
 //}
 
-dword create_proc(void* start_addr, dword priority)
+u32 create_proc(void* start_addr, u32 priority)
 {
 	static SPIN_LOCK lock = { 0 };
 
@@ -155,7 +160,7 @@ dword create_proc(void* start_addr, dword priority)
 
 	/* Allocate PDT in kernel space */
 	cr3 = alloc_page(PAGE_SYSTEM);
-	valloc_page((dword)cr3, (dword)cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+	valloc_page((u32)cr3, (u32)cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
 	memcpy(cr3, kernel_page_dir_table, SIZE_OF_PAGE);
 	((PAGE_DIRECTORY_TABLE)cr3)[1023] = MAKE_PDT_ITEM(cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
 
@@ -165,15 +170,15 @@ dword create_proc(void* start_addr, dword priority)
 
 	/* Allocate PCB at kernel space */
 	p = alloc_page(PAGE_SYSTEM);
-	proc = valloc_page((dword)p, (dword)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+	proc = valloc_page((u32)p, (u32)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
 	memset(proc, 0, SIZE_OF_PAGE);
 
 	proc->pdt_base = (PAGE_DIRECTORY_TABLE)cr3;
-	proc->pid = (dword)proc >> 12;
+	proc->pid = (u32)proc >> 12;
 	proc->start_tick = tick;
-	proc->next = pcb;
 
 //	spin_lock(&lock);
+	proc->next = pcb;
 	pcb = proc;
 //	spin_unlock(&lock);
 
@@ -186,7 +191,7 @@ dword create_proc(void* start_addr, dword priority)
 }
 
 
-THREAD* create_thread(PROCESS* proc, dword priority,void* start_addr)
+THREAD* create_thread(PROCESS* proc, u32 priority, void* start_addr)
 {
 	static SPIN_LOCK lock = { 0 };
 
@@ -195,13 +200,15 @@ THREAD* create_thread(PROCESS* proc, dword priority,void* start_addr)
 
 	/* Allocate kernel stack at kernel space */
 	p = alloc_page(PAGE_SYSTEM);
-	valloc_page((dword)p, (dword)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
+	valloc_page((u32)p, (u32)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
 	memset(p, 0, SIZE_OF_PAGE);
-	thread = (THREAD*)((dword)p + SIZE_OF_PAGE - sizeof(THREAD));
-	thread->kernel_esp = (dword)thread;
+
+	/* Initialize thread attributes */
+	thread = (THREAD*)((u32)p + SIZE_OF_PAGE - sizeof(THREAD));
+	thread->kernel_esp = (u32)thread;
 	thread->proc = proc;
 	thread->count = thread->priority = priority;
-	thread->tid = (dword)p >> 12;
+	thread->tid = (u32)p >> 12;
 	thread->pdt_base = proc->pdt_base;
 
 //	spin_lock(&lock);
@@ -213,21 +220,18 @@ THREAD* create_thread(PROCESS* proc, dword priority,void* start_addr)
 
 	/* Allocate user stack at user space */
 	p = alloc_page(PAGE_USER);
-	valloc_page(DEFAULT_ESP - 2 * SIZE_OF_PAGE, (dword)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_WRITE);
+	valloc_page(DEFAULT_ESP - 2 * SIZE_OF_PAGE, (u32)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_WRITE);
 	p = alloc_page(PAGE_USER);
-	valloc_page(DEFAULT_ESP - SIZE_OF_PAGE, (dword)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_WRITE);
+	valloc_page(DEFAULT_ESP - SIZE_OF_PAGE, (u32)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_WRITE);
 
 	/* Allocate code page */
 	p = alloc_page(PAGE_USER);
-	valloc_page(DEFAULT_EIP, (dword)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_ONLY);
+	valloc_page(DEFAULT_EIP, (u32)p, PAGE_USER | PAGE_PRESENT | PAGE_READ_ONLY);
 	/* Copy codes to virtual memory */
 	memcpy((void*)DEFAULT_EIP, start_addr, SIZE_OF_PAGE);
 
 	init_context(thread);
 	thread->state = READY;
-
-	/* TEST */
-	valloc_page(0x800000, 0x800000, PAGE_USER | PAGE_PRESENT | PAGE_READ_WRITE);
 }
 
 
@@ -253,8 +257,8 @@ THREAD* create_thread(PROCESS* proc, dword priority,void* start_addr)
 void init_context(THREAD* thread)
 {
 	/* Construct stack frame as above */
-	*(dword*)((dword)thread - 4) = (dword)return_from_interrupt;
-	thread->kernel_esp = ((dword)thread - 20);
+	*(u32*)((u32)thread - 4) = (u32)return_from_interrupt;
+	thread->kernel_esp = ((u32)thread - 20);
 
 	/* Initialize segment selector */
 	thread->regs.cs = USER_CS;
@@ -271,74 +275,74 @@ void init_context(THREAD* thread)
 }
 
 
-dword suspend_thread(TCB* block_queue, dword tid, dword ms)
-{
-	THREAD* p = rdy_tcb, *thread = NULL, *prev = rdy_tcb;
+//u32 suspend_thread(TCB* block_queue, u32 tid, u32 ms)
+//{
+//	THREAD* p = rdy_tcb, *thread = NULL, *prev = rdy_tcb;
+//
+//	while (p)
+//	{
+//		if (p->tid == tid)
+//		{
+//			thread = p;
+//			break;
+//		}
+//		prev = p;
+//		p = p->all_next;
+//	}
+//
+//	if (thread == NULL)
+//		return -1;
+//
+//	if (!block_queue)
+//		return -1;
+//
+//	prev->rdy_next = thread->rdy_next;
+//	thread->rdy_next = NULL;
+//	thread->rdy_next = *block_queue;
+//	*block_queue = thread;
+//
+//	if (ms < 20)
+//		ms += 20;
+//	thread->wake_tick = ms == INFINITY ? INFINITY : tick + ms / 20;
+//	thread->state = BLOCKED;
+//
+//	if(thread == get_current_thread())
+//		schedule();
+//
+//	return 0;
+//}
 
-	while (p)
-	{
-		if (p->tid == tid)
-		{
-			thread = p;
-			break;
-		}
-		prev = p;
-		p = p->all_next;
-	}
 
-	if (thread == NULL)
-		return -1;
-
-	if (!block_queue)
-		return -1;
-
-	prev->rdy_next = thread->rdy_next;
-	thread->rdy_next = NULL;
-	thread->rdy_next = *block_queue;
-	*block_queue = thread;
-
-	if (ms < 20)
-		ms += 20;
-	thread->wake_tick = ms == INFINITY ? INFINITY : tick + ms / 20;
-	thread->state = BLOCKED;
-
-	if(thread == get_current_thread())
-		schedule();
-
-	return 0;
-}
-
-
-dword resume_thread(TCB* block_queue, dword tid)
-{
-	THREAD* p, * prev, * thread = NULL;
-
-	if (!block_queue)
-		return -1;
-
-	p = prev = *block_queue;
-	while (p)
-	{
-		if (p->tid == tid)
-		{
-			thread = p;
-			break;
-		}
-
-		prev = p;
-		p = p->block_next;
-	}
-
-	if (thread == NULL)
-		return -1;
-
-	prev->block_next = thread->block_next;
-	thread->block_next = NULL;
-	thread->rdy_next = rdy_tcb;
-	rdy_tcb = thread;
-
-	thread->state = READY;
-}
+//u32 resume_thread(TCB* block_queue, u32 tid)
+//{
+//	THREAD* p, * prev, * thread = NULL;
+//
+//	if (!block_queue)
+//		return -1;
+//
+//	p = prev = *block_queue;
+//	while (p)
+//	{
+//		if (p->tid == tid)
+//		{
+//			thread = p;
+//			break;
+//		}
+//
+//		prev = p;
+//		p = p->block_next;
+//	}
+//
+//	if (thread == NULL)
+//		return -1;
+//
+//	prev->block_next = thread->block_next;
+//	thread->block_next = NULL;
+//	thread->rdy_next = rdy_tcb;
+//	rdy_tcb = thread;
+//
+//	thread->state = READY;
+//}
 
 /*
 void do_wake_up()
@@ -492,11 +496,11 @@ void CALLBACK handle_mf()
  * tick count is 0, add the tick count according to thread's
  * priority and current state.
  */
-
-THREAD* select_thread(TCB* tcb)
-{
-
-}
+//
+//THREAD* select_thread(TCB* tcb)
+//{
+//
+//}
 
 void schedule()
 {

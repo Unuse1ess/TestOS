@@ -101,7 +101,7 @@
  * Every bit in this bitmap represents whether a physical page is used.
  */
 __attribute__((section(".mmap")))
-static byte memory_bitmap[SIZE_OF_MEM_BMP];
+static u8 memory_bitmap[SIZE_OF_MEM_BMP];
 
 /* Kernel's PDT and PTE, and PTE is shared by all the user programs. */
 __attribute__((section(".PG_TBL")))
@@ -119,13 +119,13 @@ struct __dummy
 };
 
 
-void set_page(dword page_num, dword attr);
-dword is_page_free(dword page_num);
+void set_page(u32 page_num, u32 attr);
+u32 is_page_free(u32 page_num);
 
 
 void init_memory()
 {
-	dword i, j, end_byte, end_bit;
+	u32 i, j, end_byte, end_bit;
 	const MEMORY_BLOCK_INFO* p = mem_block_info;
 
 	/*
@@ -148,8 +148,8 @@ void init_memory()
 		if (p->type == 1)
 		{
 			/* Page as unit, represented as a bit */
-			i = (dword)p->base_addr >> 12;
-			end_byte = i + (dword)p->length >> 12;
+			i = (u32)p->base_addr >> 12;
+			end_byte = i + (u32)p->length >> 12;
 
 			end_bit = end_byte & 7;		/* Equivalent to ... % 8 but faster */
 			end_byte >>= 3;
@@ -158,13 +158,13 @@ void init_memory()
 			/* High (8 - j) bits is set to 0 */
 			if (j)
 			{
-				memory_bitmap[i] &= ((1 << (byte)j) - 1);
+				memory_bitmap[i] &= ((1 << (u8)j) - 1);
 				i++;
 			}
 			/* Low nbit bits is set to 0 */
 			if (end_bit)
 			{
-				memory_bitmap[end_byte] &= ~((1 << (byte)end_bit) - 1);
+				memory_bitmap[end_byte] &= ~((1 << (u8)end_bit) - 1);
 				/* No need to 'end_byte--;' because end_bit is behind end_byte. */
 			}
 			memset(&memory_bitmap[i], 0, end_byte - i);
@@ -181,7 +181,7 @@ void init_memory()
 	 * even it is used by kernel.
 	 */
 	memset(kernel_page_dir_table, 0, SIZE_OF_PAGE_DIR_TABLE);
-	kernel_page_dir_table[0] = MAKE_PDT_ITEM(kernel_page_table, PAGE_USER | PAGE_PRESENT | PAGE_GLOBAL);
+	kernel_page_dir_table[0] = MAKE_PDT_ITEM(kernel_page_table, PAGE_USER | PAGE_PRESENT);
 
 	/* Point to itself to make it able to modify itself.
 	 * Therefore, it can be accessed through virtual address 0xFFFFF000.
@@ -191,13 +191,13 @@ void init_memory()
 	/* Initialize kernel page table */
 	memset(kernel_page_table, 0, SIZE_OF_PAGE_TABLE);
 	for (i = 0; i < NUM_OF_USED_PAGES; i++)
-		kernel_page_table[i] = MAKE_PTE_ITEM(i << 12, PAGE_SYSTEM | PAGE_PRESENT);
+		kernel_page_table[i] = MAKE_PTE_ITEM(i << 12, PAGE_SYSTEM | PAGE_PRESENT | PAGE_GLOBAL);
 	/*
 	 * Page frame #0x9D ~ #0x9E are used as kernel stack.
 	 * And #0x9F ~ #0xFF is are used as BIOS and video card.
 	 */
 	for (i = 0x9D; i < 0x100; i++)
-		kernel_page_table[i] = MAKE_PTE_ITEM(i << 12, PAGE_SYSTEM | PAGE_PRESENT);
+		kernel_page_table[i] = MAKE_PTE_ITEM(i << 12, PAGE_SYSTEM | PAGE_PRESENT | PAGE_GLOBAL);
 
 	/* Enter page mode */
 	set_cr3((void*)kernel_page_dir_table);
@@ -205,7 +205,7 @@ void init_memory()
 }
 
 /* Allocate a PHYSICAL page and return PHYSICAL address. */
-void* alloc_page(dword attr)
+void* alloc_page(u32 attr)
 {
 	static SPIN_LOCK lock;
 
@@ -256,12 +256,12 @@ void* alloc_page(dword attr)
  * NOTICE: If you don't know or not sure how it works,
  * don't make any changes on it!
  */
-void* valloc_page(dword v_addr, dword p_addr, dword attr)
+void* valloc_page(u32 v_addr, u32 p_addr, u32 attr)
 {
 	/* This virtual address points to itself */
 	PAGE_DIRECTORY_TABLE pdt = (PAGE_DIRECTORY_TABLE)0xFFFFF000;
-	dword pdt_index = GET_PAGE_TABLE_INDEX(v_addr);
-	dword pte_index = GET_PAGE_INDEX(v_addr);
+	u32 pdt_index = GET_PAGE_TABLE_INDEX(v_addr);
+	u32 pte_index = GET_PAGE_INDEX(v_addr);
 	/* This virtual address points to page table */
 	PAGE_TABLE pte = (PAGE_TABLE)(0xFFC00000 + (pte_index << 12));
 	void* p;
@@ -298,7 +298,7 @@ void* valloc_page(dword v_addr, dword p_addr, dword attr)
 
 void free_page(void* ptr)
 {
-	set_page((dword)ptr >> 12, PAGE_FREE);
+	set_page((u32)ptr >> 12, PAGE_FREE);
 }
 
 void vfree_page(void* vptr)
@@ -333,10 +333,10 @@ void CALLBACK handle_pf()
 
 /* Internel functions */
 
-void set_page(dword page_num, dword attr)
+void set_page(u32 page_num, u32 attr)
 {
-	dword byte_num = page_num >> 3;				/* byte_num = page_num / 8; */
-	dword bit_num = page_num & 7;				/* bit_num = page_num % 8; */
+	u32 byte_num = page_num >> 3;				/* byte_num = page_num / 8; */
+	u32 bit_num = page_num & 7;				/* bit_num = page_num % 8; */
 
 	if (attr == PAGE_FREE)
 		memory_bitmap[byte_num] &= ~(1 << bit_num);	/* Clear the bit */
@@ -344,7 +344,7 @@ void set_page(dword page_num, dword attr)
 		memory_bitmap[byte_num] |= (1 << bit_num);	/* Set the bit */
 }
 
-dword is_page_free(dword page_num)
+u32 is_page_free(u32 page_num)
 {
 	return !(memory_bitmap[page_num >> 3] & (1 << (page_num & 7)));
 }

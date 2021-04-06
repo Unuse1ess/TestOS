@@ -4,12 +4,18 @@
 ;		2020/11/15 Created by MYM.
 ;-------------------------------------------------------
 
+; Solution for interrupt reenter:
+; Export send_EOI() and call it at specific function.
+
 %include "kernel/sconst.inc"
 
 ; Total size of general purpose registers
 SIZE_OF_GPR equ 32
 
 global _return_from_interrupt
+global _send_EOI
+
+last_int_no: dd 0
 
 [bits 32]
 
@@ -19,7 +25,6 @@ global _return_from_interrupt
 ; Defined in task.c
 [extern _rdy_thread]
 
-last_int_no: dd 128
 
 
 _send_EOI:

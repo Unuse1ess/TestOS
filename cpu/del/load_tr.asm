@@ -6,9 +6,3 @@
 
 [bits 32]
 
-global _load_tr
-
-; Prototype: void load_tr(word tr);
-_load_tr:
-	ltr [esp + 4]
-	ret

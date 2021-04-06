@@ -26,6 +26,9 @@
 #include "../cpu/math.h"
 #include "spin_lock.h"
 
+#include "../cpu/apic.h"
+#include "../cpu/msr.h"
+
 
 __attribute__((section(".boot")))
 static byte boot_sect[512];
@@ -60,14 +63,28 @@ void kernel_main()
 	init_fpu();
 
 	clear_screen();
-	print_os_info();
+//	print_os_info();
+
+	//u64 i, j;
+	//void init_apic();
+
+	//init_apic();
+	//read_msr(IA32_APIC_BASE, &i);
+	//i &= 0xFF800FFF;
+	//write_msr(IA32_APIC_BASE, i);
+	//read_msr(IA32_APIC_BASE, &j);
+
+	//kprintf("%x\n", (u32)j);
+	//kprintf("%x\n", (*(volatile u32*)LAPIC_SVR));
+
+	//for (;;);
 
 	extern void test_A();
 	extern void test_B();
 	extern void test_C();
 
 	create_proc((void*)test_A, PRIORITY_NORMAL);
-//	create_proc((void*)test_B, PRIORITY_NORMAL);
-//	create_proc((void*)test_C, PRIORITY_NORMAL);
+	create_proc((void*)test_B, PRIORITY_NORMAL);
+	create_proc((void*)test_C, PRIORITY_NORMAL);
 	schedule();
 }

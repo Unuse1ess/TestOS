@@ -25,7 +25,7 @@ INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
 /* Not exposed */
 IDTR idtr;
 
-extern void load_idtr();
+extern void load_idtr(u16 size, INTERRUPT_DESCRIPTOR* idt);
 extern void CALLBACK handle_de();
 extern void CALLBACK handle_db();
 extern void CALLBACK handle_bp();
@@ -43,60 +43,60 @@ extern void CALLBACK handle_mf();
 void init_idt()
 {
 	/* Install handler of CPU-reserved interrupts */
-	set_idt_gate(0, (dword)isr0);
-	set_idt_gate(1, (dword)isr1);
-	set_idt_gate(2, (dword)isr2);
-	set_idt_gate(3, (dword)isr3);
-	set_idt_gate(4, (dword)isr4);
-	set_idt_gate(5, (dword)isr5);
-	set_idt_gate(6, (dword)isr6);
-	set_idt_gate(7, (dword)isr7);
-	set_idt_gate(8, (dword)isr8);
-	set_idt_gate(9, (dword)isr9);
-	set_idt_gate(10, (dword)isr10);
-	set_idt_gate(11, (dword)isr11);
-	set_idt_gate(12, (dword)isr12);
-	set_idt_gate(13, (dword)isr13);
-	set_idt_gate(14, (dword)isr14);
-	set_idt_gate(15, (dword)isr15);
-	set_idt_gate(16, (dword)isr16);
-	set_idt_gate(17, (dword)isr17);
-	set_idt_gate(18, (dword)isr18);
-	set_idt_gate(19, (dword)isr19);
-	set_idt_gate(20, (dword)isr20);
-	set_idt_gate(21, (dword)isr21);
-	set_idt_gate(22, (dword)isr22);
-	set_idt_gate(23, (dword)isr23);
-	set_idt_gate(24, (dword)isr24);
-	set_idt_gate(25, (dword)isr25);
-	set_idt_gate(26, (dword)isr26);
-	set_idt_gate(27, (dword)isr27);
-	set_idt_gate(28, (dword)isr28);
-	set_idt_gate(29, (dword)isr29);
-	set_idt_gate(30, (dword)isr30);
-	set_idt_gate(31, (dword)isr31);
+	set_idt_gate(0, (u32)isr0);
+	set_idt_gate(1, (u32)isr1);
+	set_idt_gate(2, (u32)isr2);
+	set_idt_gate(3, (u32)isr3);
+	set_idt_gate(4, (u32)isr4);
+	set_idt_gate(5, (u32)isr5);
+	set_idt_gate(6, (u32)isr6);
+	set_idt_gate(7, (u32)isr7);
+	set_idt_gate(8, (u32)isr8);
+	set_idt_gate(9, (u32)isr9);
+	set_idt_gate(10, (u32)isr10);
+	set_idt_gate(11, (u32)isr11);
+	set_idt_gate(12, (u32)isr12);
+	set_idt_gate(13, (u32)isr13);
+	set_idt_gate(14, (u32)isr14);
+	set_idt_gate(15, (u32)isr15);
+	set_idt_gate(16, (u32)isr16);
+	set_idt_gate(17, (u32)isr17);
+	set_idt_gate(18, (u32)isr18);
+	set_idt_gate(19, (u32)isr19);
+	set_idt_gate(20, (u32)isr20);
+	set_idt_gate(21, (u32)isr21);
+	set_idt_gate(22, (u32)isr22);
+	set_idt_gate(23, (u32)isr23);
+	set_idt_gate(24, (u32)isr24);
+	set_idt_gate(25, (u32)isr25);
+	set_idt_gate(26, (u32)isr26);
+	set_idt_gate(27, (u32)isr27);
+	set_idt_gate(28, (u32)isr28);
+	set_idt_gate(29, (u32)isr29);
+	set_idt_gate(30, (u32)isr30);
+	set_idt_gate(31, (u32)isr31);
 
 	/* Install the IRQs */
-	set_idt_gate(IRQ0, (dword)irq0);
-	set_idt_gate(IRQ1, (dword)irq1);
-	set_idt_gate(IRQ2, (dword)irq2);
-	set_idt_gate(IRQ3, (dword)irq3);
-	set_idt_gate(IRQ4, (dword)irq4);
-	set_idt_gate(IRQ5, (dword)irq5);
-	set_idt_gate(IRQ6, (dword)irq6);
-	set_idt_gate(IRQ7, (dword)irq7);
-	set_idt_gate(IRQ8, (dword)irq8);
-	set_idt_gate(IRQ9, (dword)irq9);
-	set_idt_gate(IRQ10, (dword)irq10);
-	set_idt_gate(IRQ11, (dword)irq11);
-	set_idt_gate(IRQ12, (dword)irq12);
-	set_idt_gate(IRQ13, (dword)irq13);
-	set_idt_gate(IRQ14, (dword)irq14);
-	set_idt_gate(IRQ15, (dword)irq15);
+	set_idt_gate(IRQ0, (u32)irq0);
+	set_idt_gate(IRQ1, (u32)irq1);
+	set_idt_gate(IRQ2, (u32)irq2);
+	set_idt_gate(IRQ3, (u32)irq3);
+	set_idt_gate(IRQ4, (u32)irq4);
+	set_idt_gate(IRQ5, (u32)irq5);
+	set_idt_gate(IRQ6, (u32)irq6);
+	set_idt_gate(IRQ7, (u32)irq7);
+	set_idt_gate(IRQ8, (u32)irq8);
+	set_idt_gate(IRQ9, (u32)irq9);
+	set_idt_gate(IRQ10, (u32)irq10);
+	set_idt_gate(IRQ11, (u32)irq11);
+	set_idt_gate(IRQ12, (u32)irq12);
+	set_idt_gate(IRQ13, (u32)irq13);
+	set_idt_gate(IRQ14, (u32)irq14);
+	set_idt_gate(IRQ15, (u32)irq15);
 
 	/* Reserved for user */
 	for (int i = 48; i < 255; i++)
-		set_idt_gate(i, (dword)isr_not_used);
+		set_idt_gate(i, (u32)isr_not_used);
 }
 
 void init_irq()
@@ -129,7 +129,7 @@ void init_irq()
 	port_byte_out(0xA1, 0xFF);
 }
 
-void set_idt_gate(int n, dword handler)
+void set_idt_gate(int n, u32 handler)
 {
 	idt[n].offset_low = LOWORD(handler);
 	idt[n].seg_sel = KERNEL_CS;
@@ -141,12 +141,6 @@ void set_idt_gate(int n, dword handler)
 	idt[n].offset_high = HIWORD(handler);
 }
 
-void set_idtr()
-{
-	idtr.base = (dword)&idt;
-	idtr.limit = sizeof(idt) - 1;
-	load_idtr();
-}
 
 void init_exceptions()
 {
@@ -174,7 +168,9 @@ void init_interrupts()
 {
 	init_idt();
 	init_exceptions();		/* Initialize CPU exceptions' handlers */
-	set_idtr();				/* Load idtr */
+
+	/* Load idtr */
+	load_idtr(sizeof(idt) - 1, idt);
 
 	init_irq();
 	init_clock(50);			/* IRQ0: clock, 50ms per tick */

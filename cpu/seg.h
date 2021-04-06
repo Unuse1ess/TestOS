@@ -203,9 +203,12 @@ typedef struct
 typedef struct
 {
 	word limit;
-	dword base;
+	u32* base;
 }GDTR, IDTR;
 
+/*
+typedef u64 GATE_DESCRIPTOR, INTERRUPT_DESCRIPTOR, *IDT;
+*/
 
 /* Pop previous alignment out */
 #pragma pack(pop)
