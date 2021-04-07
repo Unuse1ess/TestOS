@@ -39,7 +39,7 @@
  *	2. Kernel data segment
  *	3. ...
  */
-#define NUM_OF_GDT_DESC 32
+#define NUM_OF_GDT_DESC 16
 
  /* Kernel's segment selectors */
 #define KERNEL_CS							0x08			/* #1 in GDT */
@@ -52,7 +52,7 @@
 /*										Structure of segment descriptor
  *  63																									0
  *	+-------------------+-----------+-----------+-----------+-----------+-----------+-------------------+
- *	|		BYTE 7		|	BYTE 6	|	BYTE 5	|	BYTE 4	|	BYTE 3	|	BYTE 2	|		BYTE 1		|
+ *	|		BYTE 7		|	BYTE 6	|	BYTE 5	|	BYTE 4	|	BYTE 3	|	BYTE 2	|		BYTE 0~1	|
  *	+-------------------+-----------+-----------+-----------+-----------+-----------+-------------------+
  *	|Segment Base 31~24 |			...			|		Segment Base 23~0			|Segment Limit 15~0	|
  *	+-------------------+-----------------------+-----------------------------------+-------------------+
@@ -101,68 +101,82 @@
 
 /* Macros for BYTE 5 */
 /* P bit, bit 7 */
-#define SEG_PRESENT							0x80
-#define SEG_NOTPRESENT						0x00
+#define SEG_PRESENT							(1ULL << 47)
+#define SEG_NOTPRESENT						0
 
 /* Only use ring0 and ring3. */
 /* DPL bits, bit 5~6 */
-#define DPL_RING0							0x00
-#define DPL_RING1							0x20
-#define DPL_RING2							0x40
-#define DPL_RING3							0x60
+#define DPL_RING0							0
+#define DPL_RING1							(0b01ULL << 45)
+#define DPL_RING2							(0b10ULL << 45)
+#define DPL_RING3							(0b11ULL << 45)
 
 /* S bit, bit 4 */
-#define NORMAL_DESCPRITOR					0x10
-#define SYSTEM_DESCPRITOR					0x00
+#define NORMAL_DESCPRITOR					(1ULL << 44)
+#define SYSTEM_DESCPRITOR					0
 
 /* Type of segment descriptor, when S = 1 */
-#define SEG_DATA							0x00
-#define SEG_EXECUTABLE						0x08
+#define SEG_EXECUTABLE						(1ULL << 43)
+#define SEG_DATA							0
 /* Data segment */
-#define SEG_DS_EXPAND_DOWN					0x04
-#define SEG_DS_READ_WRITE					0x02
-#define SEG_DS_READ_ONLY					0x00
+#define SEG_DS_EXPAND_DOWN					(1ULL << 42)
+#define SEG_DS_READ_WRITE					(1ULL << 41)
+#define SEG_DS_READ_ONLY					0
 /* Executable segment */
-#define SEG_CS_CONFIRMING					0x04
-#define SEG_CS_READ_ONLY					0x02
-#define SEG_CS_INACCESSIBLE					0x00
+#define SEG_CS_CONFIRMING					(1ULL << 42)
+#define SEG_CS_READ_ONLY					(1ULL << 41)
+#define SEG_CS_INACCESSIBLE					0
 
 /* Bit 0  */
-#define SEG_NOT_ACCESSED					0x00
-#define SEG_ACCESSED						0x01
+#define SEG_ACCESSED						(1ULL << 40)
+#define SEG_NOT_ACCESSED					0
 
 /* Type of system descriptor, when S = 0 */
 /* Undefined 0x0 */
-#define AVAILABLE_286TSS					0x1
-#define LDT_DESCRIPTOR						0x2
-#define BUSY_286TSS							0x3
-#define CALL_GATE_286						0x4
-#define TASK_GATE							0x5
-#define INTERRUPT_GATE_286					0x6		/* D = 0, 16 bits operand */
-#define TRAP_GATE_286						0x7
+#define AVAILABLE_286TSS					(0x1ULL << 40)
+#define LDT_DESCRIPTOR						(0x2ULL << 40)
+#define BUSY_286TSS							(0x3ULL << 40)
+#define CALL_GATE_286						(0x4ULL << 40)
+#define TASK_GATE							(0x5ULL << 40)
+#define INTERRUPT_GATE_286					(0x6ULL << 40)		/* D = 0, 16 bits operand */
+#define TRAP_GATE_286						(0x7ULL << 40)
 /* Undefined 0x8 */
-#define AVAILABLE_386TSS					0x9
+#define AVAILABLE_386TSS					(0x9ULL << 40)
 /* Undefined 0xA */
-#define BUSY_386TSS							0xB
-#define CALL_GATE_386						0xC		/* D = 1, 32 bits operand */
+#define BUSY_386TSS							(0xBULL << 40)
+#define CALL_GATE_386						(0xCULL << 40)		/* D = 1, 32 bits operand */
 /* Undefined 0xD */
-#define INTERRUPT_GATE_386					0xE
-#define TRAP_GATE_386						0xF
+#define INTERRUPT_GATE_386					(0xEULL << 40)
+#define TRAP_GATE_386						(0xFULL << 40)
 
 /* Macros for segment descriptor's attribute */
 /* Granularity of segment limit */
-#define	SA_COUNT_BY_4KB						0x08
-#define	SA_COUNT_BY_BYTE					0x00
+#define	SA_COUNT_BY_4KB						(1ULL << 55)
+#define	SA_COUNT_BY_BYTE					0
 
 
 /* D/B bit, bit 14 in property */
 /* When it is in executable code segment or stack segment */
-#define SA_USE_32BITS						0x04
-#define SA_USE_16BITS						0x00
+#define SA_32BITS							(1ULL << 54)
+#define SA_16BITS							0
 
 /* When it is in expand-down data segment */
-#define SA_UPPERBOUND_4GB					0x04
-#define SA_UPPERBOUND_64KB					0x00
+#define SA_UPPERBOUND_4GB					(1ULL << 54)
+#define SA_UPPERBOUND_64KB					0
+
+
+#define MAKE_SEG_DESC(seg_base, seg_limit, attr) \
+		(u64)(attr) | \
+		((u64)((u32)(seg_base) & 0xFF000000)) << 32 | \
+		((u64)((u32)(seg_base) & 0x00FFFFFF)) << 16 | \
+		((u64)((u32)(seg_limit) & 0x0000FFFF)) | \
+		((u64)((u32)(seg_limit) & 0x000F0000)) << 32
+
+#define MAKE_GATE_DESC(seg_sel, offset, attr) \
+		(u64)(attr) | \
+		((u64)((u32)(offset) & 0xFFFF0000)) << 32 | \
+		(u64)((u32)(offset) & 0x0000FFFF) | \
+		((u64)((u16)(seg_sel)) << 16)
 
 
 #define TSS_IO_BITMAP_END					0xFF
@@ -170,61 +184,64 @@
 /* Cancel the alignment */
 #pragma pack(push, 1)
 
-/* Structure of segment descriptor */
+/*
+Structure of segment descriptor
 typedef struct _tagSEGMENT_DESCRIPTOR
 {
-	word seg_limit_low;
+	u16 seg_limit_low;
 
-	word seg_base_low;
-	byte seg_base_mid;
+	u16 seg_base_low;
+	u8 seg_base_mid;
 
-	byte access_authority;
+	u8 access_authority;
 
-	byte seg_limit_high : 4;
-	byte attribute : 4;
+	u8 seg_limit_high : 4;
+	u8 attribute : 4;
 
-	byte seg_base_high;
+	u8 seg_base_high;
 }SEGMENT_DESCRIPTOR, * GDT, * LDT;
 
-/* Structure of gate descriptor */
+Structure of gate descriptor
 typedef struct
 {
-	word offset_low;
-	word seg_sel;
+	u16 offset_low;
+	u16 seg_sel;
 
-	byte param_cnt : 5;
-	byte reserved : 3;
+	u8 param_cnt : 5;
+	u8 reserved : 3;
 
-	byte access_authority;
-	word offset_high;
+	u8 access_authority;
+	u16 offset_high;
 }GATE_DESCRIPTOR, INTERRUPT_DESCRIPTOR, *IDT;
+ */
 
 /* Meta structure of GDTR, IDTR */
 typedef struct
 {
-	word limit;
+	u16 limit;
 	u32* base;
 }GDTR, IDTR;
 
-/*
-typedef u64 GATE_DESCRIPTOR, INTERRUPT_DESCRIPTOR, *IDT;
-*/
 
 /* Pop previous alignment out */
 #pragma pack(pop)
 
+
+typedef u64 SEGMENT_DESCRIPTOR, * GDT, * LDT;
+typedef u64 GATE_DESCRIPTOR, INTERRUPT_DESCRIPTOR, * IDT;
+
+
 /* Functions implemented in idt.c */
-void set_idt_gate(int n, dword handler);
-void set_idt();
+void set_idt_gate(int n, u32 handler);
 
 
 /* Implemented in gdt.c */
 void init_gdt();
-word add_ldt_descriptor(void* seg_base, dword seg_limit);
-word add_tss_descriptor(void* seg_base, dword seg_limit);
-word add_global_descriptor(void* seg_base, dword seg_limit, byte authority, byte attr);
-word add_gate_descriptor(word seg_sel, dword offset, byte authority, byte param_cnt);
-dword get_desc_base_addr(word sel);
-void set_desc_base_addr(word sel, void* new_addr);
+u16 add_ldt_descriptor(void* seg_base, u32 seg_limit);
+u16 add_tss_descriptor(void* seg_base, u32 seg_limit);
+u16 add_global_descriptor(void* seg_base, u32 seg_limit, u64 attr);
+u16 add_gate_descriptor(u16 seg_sel, u32 offset, u64 attr);
+u32 get_desc_base_addr(u16 sel);
+void set_desc_base_addr(u16 sel, void* new_addr);
 
 #endif

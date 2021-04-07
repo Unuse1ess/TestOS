@@ -48,7 +48,7 @@ typedef int BOOL;
 #endif
 
 #define CALLBACK
-
+#define INLINE inline
 
 #define OK					0
 #define ERROR				((unsigned)-1)

@@ -55,6 +55,6 @@ void init_sys_call()
 	/* Fill the IDT and ISR table */
 	set_idt_gate(INT_SYSCALL, (dword)isr128);
 	/* Enable code in user mode to be able to jump to kernel */
-	idt[INT_SYSCALL].access_authority |= DPL_RING3;
+	idt[INT_SYSCALL] |= DPL_RING3;
 	set_interrupt_handler(INT_SYSCALL, do_sys_call);
 }

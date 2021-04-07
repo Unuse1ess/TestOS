@@ -63,6 +63,7 @@ void kernel_main()
 	init_fpu();
 
 	clear_screen();
+
 //	print_os_info();
 
 	//u64 i, j;
@@ -77,7 +78,6 @@ void kernel_main()
 	//kprintf("%x\n", (u32)j);
 	//kprintf("%x\n", (*(volatile u32*)LAPIC_SVR));
 
-	//for (;;);
 
 	extern void test_A();
 	extern void test_B();

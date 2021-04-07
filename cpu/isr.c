@@ -29,9 +29,7 @@
 static ISR_HANDLER interrupt_handlers[256];
 
 void set_interrupt_handler(byte n, ISR_HANDLER handler)
-{
-	interrupt_handlers[n] = handler;
-}
+{ interrupt_handlers[n] = handler; }
 
 
 /* Internel data and functions */

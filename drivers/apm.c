@@ -54,19 +54,19 @@ void init_apm()
 
 	/* All of them has length of 64KB and should be ring0. */
 	apm_data.cs_32bits_descriptor = add_global_descriptor((void*)(apm_data.pm_code_seg_base << 4), 0x10000,
-		SEG_EXECUTABLE | SEG_CS_READ_ONLY | SEG_PRESENT | NORMAL_DESCPRITOR | DPL_RING0,
-		SA_COUNT_BY_BYTE | SA_USE_32BITS);
+		SEG_EXECUTABLE | SEG_CS_READ_ONLY | SEG_PRESENT | NORMAL_DESCPRITOR | DPL_RING0 |
+		SA_COUNT_BY_BYTE | SA_32BITS);
 
 	apm_data.cs_16bits_descriptor = add_global_descriptor((void*)(apm_data.rm_code_seg_base << 4), 0x10000,
-		SEG_EXECUTABLE | SEG_CS_READ_ONLY | SEG_PRESENT | NORMAL_DESCPRITOR | DPL_RING0,
-		SA_COUNT_BY_BYTE | SA_USE_16BITS);
+		SEG_EXECUTABLE | SEG_CS_READ_ONLY | SEG_PRESENT | NORMAL_DESCPRITOR | DPL_RING0 |
+		SA_COUNT_BY_BYTE | SA_16BITS);
 
 	apm_data.ds_16bits_descriptor = add_global_descriptor((void*)(apm_data.rm_data_seg_base << 4), 0x10000,
-		SEG_DATA | SEG_DS_READ_WRITE | SEG_PRESENT | NORMAL_DESCPRITOR | DPL_RING0,
-		SA_COUNT_BY_BYTE | SA_USE_16BITS);
+		SEG_DATA | SEG_DS_READ_WRITE | SEG_PRESENT | NORMAL_DESCPRITOR | DPL_RING0 |
+		SA_COUNT_BY_BYTE | SA_16BITS);
 
 	apm_data.call_gate = add_gate_descriptor(apm_data.cs_32bits_descriptor, apm_data.pm_entry_point,
-		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | CALL_GATE_386, 0);
+		SEG_PRESENT | DPL_RING0 | SYSTEM_DESCPRITOR | CALL_GATE_386);
 
 	/* Modify the call gate selector in apm jump stub,
 	 * enabling CPU find the correct call gate.

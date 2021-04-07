@@ -2,6 +2,7 @@
 ;									History
 ;	Version 0.1:
 ;		2020/11/12 Created by MYM. Create the boot program for the OS.
+;		
 ;-----------------------------------------------------------------------------
 
 
@@ -23,27 +24,20 @@ VBE_DATA_OFFSET		equ		0x800
 
 
 ; Real mode stack base address
-RM_CODE_SEG			equ		0x9EE0
-RM_STACK_SEG		equ		0x9EC0
-RM_STACK_BASE		equ		0x200
+RM_STACK_BASE		equ		0x8000
 
-PM_CODE_SEG			equ		0x8
-PM_DATA_SEG			equ		0x10
-
-
-[bits 16]
+CODE_SEG equ 0x8
+DATA_SEG equ 0x10
 
 ; Tell the assembler where the program is.
 [org 0x7c00]
-_start:
+[bits 16]
+
 	; Initialize real mode stack
 	xor ax, ax
 	mov ss, ax
 	mov sp, RM_STACK_BASE
 	mov bp, sp
-
-	xor ax, ax
-	mov ds, ax
 	mov es, ax
 
 	; Load the kernel into 0x1000.
@@ -51,7 +45,7 @@ _start:
 	call setup_apm
 	call setup_video_mode
 	call get_mem_info
-	
+
 	; Switch to 32-bit protected mode.
 	cli							; Clear interrupt flag
 	in al, 0x92					; Open address line A20
@@ -62,7 +56,7 @@ _start:
     mov eax, cr0
     or eax, 1					; Set 32-bit mode bit in cr0
     mov cr0, eax
-    jmp dword PM_CODE_SEG:init_pm	; Far jump by using a different segment to clear CPU pipeline
+    jmp dword CODE_SEG:init_pm	; Far jump by using a different segment to clear CPU pipeline
 	
 
 load_kernel:
@@ -143,7 +137,7 @@ setup_video_mode:
 vid_err:
 
 	ret
-	
+
 get_mem_info:
 	mov di, MEM_BLOCK_INFO_OFFSET
 	xor ebx, ebx
@@ -162,14 +156,16 @@ not_finished:
 
 mem_check_err:
 
+
 	ret
+	
 
 ; 32-bit protect mode codes
 [bits 32]
 
 init_pm:
 	; Initialize all the data segment
-	mov ax, PM_DATA_SEG
+	mov ax, DATA_SEG
     mov ds, ax
     mov ss, ax
     mov es, ax

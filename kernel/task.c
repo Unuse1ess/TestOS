@@ -38,6 +38,12 @@
 #define DEFAULT_ESP		0xA0000000
 
 
+#define USER_CS_ATTR SEG_PRESENT | DPL_RING3 | NORMAL_DESCPRITOR | \
+	SEG_EXECUTABLE | SEG_CS_READ_ONLY | SA_COUNT_BY_4KB | SA_32BITS
+
+#define USER_DS_ATTR SEG_PRESENT | DPL_RING3 | NORMAL_DESCPRITOR | \
+	SEG_DATA | SEG_DS_READ_WRITE | SA_COUNT_BY_4KB | SA_32BITS
+
 
 /* Defined in timer.c */
 extern u32 tick;
@@ -79,26 +85,9 @@ void init_context(THREAD* thread);
 void init_ldt()
 {
 	/* Initialize descriptor for code segment */
-	ldt[0].seg_limit_low = 0xffff;
-	ldt[0].seg_limit_high = 0xf;
 
-	ldt[0].seg_base_low = 0;
-	ldt[0].seg_base_mid = 0;
-	ldt[0].seg_base_high = 0;
-
-	ldt[0].access_authority = SEG_PRESENT | DPL_RING3 | NORMAL_DESCPRITOR | SEG_EXECUTABLE | SEG_CS_READ_ONLY;
-	ldt[0].attribute = SA_COUNT_BY_4KB | SA_USE_32BITS;
-
-	/* Initialize descriptor for data segment */
-	ldt[1].seg_limit_low = 0xffff;
-	ldt[1].seg_limit_high = 0xf;
-
-	ldt[1].seg_base_low = 0;
-	ldt[1].seg_base_mid = 0;
-	ldt[1].seg_base_high = 0;
-
-	ldt[1].access_authority = SEG_PRESENT | DPL_RING3 | NORMAL_DESCPRITOR | SEG_DATA | SEG_DS_READ_WRITE;
-	ldt[1].attribute = SA_COUNT_BY_4KB | SA_USE_32BITS;
+	ldt[0] = MAKE_SEG_DESC(0, 0xFFFFF, USER_CS_ATTR);
+	ldt[1] = MAKE_SEG_DESC(0, 0xFFFFF, USER_DS_ATTR);
 
 	ldtr = add_ldt_descriptor(ldt, sizeof(ldt));
 	load_ldtr(ldtr);
@@ -110,46 +99,13 @@ void init_tss()
 	memset((void*)&tss, 0, sizeof(TASK_STATE_SEGMENT));
 
 	tss.ss0 = KERNEL_DS;
-	tss.io_bitmap_base = sizeof(TASK_STATE_SEGMENT);
-	tr = add_tss_descriptor(&tss, sizeof(TASK_STATE_SEGMENT) - 1);
+	tss.io_bitmap_base = 0;
+	tr = add_tss_descriptor(&tss, sizeof(TASK_STATE_SEGMENT) + 1);
 	load_tr(tr);
 }
 
 
 /*-------------------------Process & Thread Part-------------------------*/
-
-/* Only copy caller thread */
-//u32 sys_fork()
-//{
-//	PROCESS* proc;
-//	THREAD* thread;
-//	void* p, * cr3, * old_cr3;
-//
-//	cr3 = alloc_page(PAGE_SYSTEM);
-//	valloc_page((u32)cr3, (u32)cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
-//	memcpy(cr3, (void*)0xFFC00000, SIZE_OF_PAGE);
-//	((PAGE_DIRECTORY_TABLE)cr3)[1023] = MAKE_PDT_ITEM(cr3, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
-//
-//	/* Switch cr3 to modify its user space easily */
-//	old_cr3 = get_cr3();
-//	set_cr3(cr3);
-//
-//	p = alloc_page(PAGE_SYSTEM);
-//	proc = valloc_page((u32)p, (u32)p, PAGE_SYSTEM | PAGE_PRESENT | PAGE_READ_WRITE);
-//	memset(proc, 0, SIZE_OF_PAGE);
-//
-//	proc->pdt_base = (PAGE_DIRECTORY_TABLE)cr3;
-//	proc->pid = (u32)proc >> 12;
-//	proc->next = pcb;
-//	pcb = proc;
-//
-//	thread = create_thread(proc, get_current_thread()->priority, (void*)get_current_thread()->regs.eip);
-//	memcpy(&thread->regs, &get_current_thread()->regs, sizeof(THREAD_CONTEXT));
-//	thread->regs.eax = 0;
-//	set_cr3(old_cr3);
-//
-//	return proc->pid;
-//}
 
 u32 create_proc(void* start_addr, u32 priority)
 {

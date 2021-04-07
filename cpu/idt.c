@@ -22,8 +22,6 @@
 
 INTERRUPT_DESCRIPTOR idt[NUM_OF_INT_DESC];
 
-/* Not exposed */
-IDTR idtr;
 
 extern void load_idtr(u16 size, INTERRUPT_DESCRIPTOR* idt);
 extern void CALLBACK handle_de();
@@ -95,7 +93,7 @@ void init_idt()
 	set_idt_gate(IRQ15, (u32)irq15);
 
 	/* Reserved for user */
-	for (int i = 48; i < 255; i++)
+	for (int i = 48; i < 256; i++)
 		set_idt_gate(i, (u32)isr_not_used);
 }
 
@@ -129,16 +127,9 @@ void init_irq()
 	port_byte_out(0xA1, 0xFF);
 }
 
-void set_idt_gate(int n, u32 handler)
+void INLINE set_idt_gate(int n, u32 handler)
 {
-	idt[n].offset_low = LOWORD(handler);
-	idt[n].seg_sel = KERNEL_CS;
-
-	idt[n].param_cnt = 0;
-	idt[n].reserved = 0;
-	
-	idt[n].access_authority = SEG_PRESENT | SYSTEM_DESCPRITOR | INTERRUPT_GATE_386;
-	idt[n].offset_high = HIWORD(handler);
+	idt[n] = MAKE_GATE_DESC(KERNEL_CS, handler, SEG_PRESENT | SYSTEM_DESCPRITOR | INTERRUPT_GATE_386);
 }
 
 
@@ -149,11 +140,11 @@ void init_exceptions()
 
 	/* int 3 ~ 5 are enabled at user mode */
 	set_interrupt_handler(INT_BP, handle_bp);
-	idt[INT_BP].access_authority |= DPL_RING3;
+	idt[INT_BP] |= DPL_RING3;
 	set_interrupt_handler(INT_OF, handle_of);
-	idt[INT_OF].access_authority |= DPL_RING3;
+	idt[INT_OF] |= DPL_RING3;
 	set_interrupt_handler(INT_BR, handle_br);
-	idt[INT_BR].access_authority |= DPL_RING3;
+	idt[INT_BR] |= DPL_RING3;
 
 	set_interrupt_handler(INT_UD, handle_ud);
 	set_interrupt_handler(INT_NM, handle_nm);
